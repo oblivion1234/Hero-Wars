@@ -61,6 +61,11 @@ def get_player(userid):
 def create_player(userid):
     """Creates a new player, fetching his data from the database.
 
+    Creates a new player object, loads any saved data from the database
+    based on SteamID, makes sure the player gets the starting heroes
+    and has a current hero set. Finally returns the player after adding
+    him to the global players list.
+
     Args:
         userid: Userid of the player to create
 
@@ -68,13 +73,20 @@ def create_player(userid):
         New player who's been added to the players list
     """
 
+    # Create a new player and load his data from the database (if any)
     player = _Player(index_from_userid(userid))
     load_player_data(database_path, player)
+
+    # Make sure player gets the starting hero(es)
     if not player.heroes:
         first_hero_cls = Hero.get_subclasses()[0]
         player.heroes.append(first_hero_cls())
+
+    # Make sure the player has a current hero
     if not player.hero:
         player._hero = player.heroes[0]
+
+    # Add the player to the global list and return the player
     players.append(player)
     return player
 
@@ -82,12 +94,18 @@ def create_player(userid):
 def remove_player(userid):
     """Removes a player, inserting his data into the database.
 
+    Finds a player with given userid, saving his data into the database
+    and removing him from the global players list.
+
     Args:
         userid: Userid of the player to remove
     """
 
+    # Attempt to get the player
     player = get_player(userid)
     if player:
+
+        # Save player's data and remove him
         save_player_data(database_path, player)
         players.remove(player)
 

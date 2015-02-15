@@ -113,7 +113,8 @@ def load_player_data(database_file, player):
         )
         gold, hero_cls_id = cursor.fetchone() or (0, None)
         player.gold = gold
-        # Load heroes
+
+        # Load player's heroes
         cursor.execute(
             "SELECT cls_id, level, exp FROM heroes WHERE steamid=?",
             (player.steamid, )
@@ -143,6 +144,8 @@ def load_hero_data(database_file, steamid, hero):
             (steamid, hero.cls_id)
         )
         hero.level, hero.exp = cursor.fetchone() or (0, 0)
+
+        # Load hero's skills
         for skill in hero.skills:
             cursor.execute(
                 "SELECT level FROM skills "
