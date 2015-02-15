@@ -48,19 +48,42 @@ class _Cooldown(object):
 # ======================================================================
 
 def find_element(iterable, attr_name, attr_value):
-    """Finds an element with matching attribute."""
+    """Finds an element from an iterable by an attribute.
 
-    for element in iterable:
-        if getattr(element, attr_name) == attr_value:
-            return element
+    Takes an iterable and looks for the first element that has
+    an attribute with matching name and value to the provided arguments.
+
+    Args:
+        iterable: Iterable where to seek for the element
+        attr_name: Name of the attribute to compare to
+        attr_value: Desired value of the attribute
+
+    Returns:
+        First element with matching attribute
+    """
+
+    for x in iterable:
+        if getattr(x, attr_name) == attr_value:
+            return x
+
 
 def find_elements(iterable, attr_name, attr_value):
-    """Finds elements with matching attributes."""
-    elements = []
-    for element in iterable:
-        if getattr(element, attr_name) == attr_value:
-            elements.append(element)
-    return elements
+    """Finds all elements from an iterable by an attribute.
+
+    Takes an iterable and looks for all the elements that have
+    an attribute with matching name and value to the provided arguments.
+
+    Args:
+        iterable: Iterable where to seek for the elements
+        attr_name: Name of the attribute to compare to
+        attr_value: Desired value of the attribute 
+
+    Returns:
+        A generator of elements with matching attribute
+    """
+
+    return (x for x in iterable if getattr(x, attr_name) == attr_value)
+
 
 def get_subclasses(cls):
     """Gets a set of class' subclasses."""
