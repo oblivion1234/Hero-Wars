@@ -27,22 +27,6 @@ class classproperty(object):
         return self.getter(owner)
 
 
-class _Cooldown(object):
-    def __init__(self, max_cooldown):
-        self.max_cooldown = max_cooldown
-        self.remaining_cooldown = 0
-
-        self.tick_repeat = TickRepeat(self.reduce_cooldown)
-        self.tick_repeat.start(1, self.max_cooldown)
-
-    def reduce_cooldown(self):
-        if self.remaining_cooldown <= 0:
-            self.tick_repeat.stop()
-        else:
-            self.remaining_cooldown -= 1
-
-
-
 # ======================================================================
 # >> FUNCTIONS
 # ======================================================================
@@ -86,7 +70,7 @@ def find_elements(iterable, attr_name, attr_value):
 
 
 def get_subclasses(cls):
-    """Gets a set of class' subclasses."""
+    """Returns a set of class' subclasses."""
 
     subclasses = set()
     for subcls in cls.__subclasses__():
