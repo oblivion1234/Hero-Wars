@@ -210,7 +210,7 @@ class _Player(PlayerEntity):
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
 
-    def send_message(self, message):
+    def signal(self, message):
         """Sends a message to a player using SayText2.
 
         Args:

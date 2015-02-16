@@ -57,7 +57,7 @@ def give_exp(player, exp_key):
         if exp > 0:
             player.exp += exp
             translation = get_translation(player.language, 'exp', exp_key)
-            player.send_message(translation.format(exp=exp))
+            player.signal(translation.format(exp=exp))
 
 
 def give_team_exp(player, exp_key):
