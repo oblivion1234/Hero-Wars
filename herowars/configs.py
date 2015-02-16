@@ -1,3 +1,16 @@
+# ======================================================================
+# >> CONFIGURATIONS
+# ======================================================================
+
+
+# Default language abbreviation
+default_language = 'en'
+
+
+# Chat command prefix, default is '!'
+chat_command_prefix = '!'
+
+
 # Dictionary for experience point values
 exp_values = dict(
 
@@ -5,9 +18,7 @@ exp_values = dict(
     kill = 30,
     headshot = 15,
     assist = 15,
-    weapons = dict(
-        weapon_knife = 30,
-    ),
+    weapon_knife = 30,
 
     # Round values
     round_win = 30,
@@ -22,8 +33,8 @@ exp_values = dict(
     bomb_defuse_team = 15,
 
     # Hostage values
-    hostage_pickup = 5,
-    hostage_pickup_team = 0,
+    hostage_pick_up = 5,
+    hostage_pick_up_team = 0,
     hostage_rescue = 25,
     hostage_rescue_team = 10,
 )
@@ -33,9 +44,8 @@ exp_values = dict(
 database_path = './herowars.db'
 
 
-# List of starting heroes
-# These are given to a player when he joins for the first time.
-# Use cls_id for identifying the starting Hero classes
+# Starting heroes given when a player joins for the first time
+# Use class names for identifying the Hero classes
 starting_heroes = (
     'UndeadMage',
 

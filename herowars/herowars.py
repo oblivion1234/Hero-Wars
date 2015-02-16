@@ -14,6 +14,9 @@ from herowars.entities import Hero
 
 from herowars.configs import database_path
 from herowars.configs import exp_values
+from herowars.configs import chat_command_prefix
+
+from herowars.translations import get_translation
 
 from herowars.heroes import *
 
@@ -41,30 +44,36 @@ def load():
     setup_database(database_path)
 
 
-def _give_objective_exp(userid, team, exp_key):
-    """Gives experience points from an objective.
-
-    Gives the performing player exp based on the exp_key and all of 
-    his teammates exp based on exp_key + '_team'.
+def give_exp(player, exp_key):
+    """Gives player exp and sends him a message about it.
 
     Args:
-        userid: Userid of the player completing the objective
-        team: Team who to give exp to ('t' or 'ct')
-        exp_key: Key for the exp giving from herowars.configs.exp_values
+        player: Player who to give exp to
+        exp_key: Key used for finding the exp value and translation
     """
 
-    # Get the player
-    player = get_player(userid)
+    if player and player.hero:
+        exp = exp_values.get(exp_key, 0)
+        if exp > 0:
+            player.exp += exp
+            translation = get_translation(player.language, 'exp', exp_key)
+            player.send_message(translation.format(exp=exp))
 
-    # Give exp from the objective
-    if player:
-        player.hero.exp += exp_values[exp_key]
 
-    # Give player's teammates exp
+def give_team_exp(player, exp_key):
+    """Gives exp for player's teammates.
+
+    Args:
+        player: Player whose teammates to give exp to
+        exp_key: Key used for finding the exp value and translation
+    """
+
+    # Give all his teammates exp
+    team = player.team == 2 and 't' or 'ct'
     for userid in PlayerIter(is_filters=team, return_types='userid'):
-        teammate = get_player(userid)
-        if teammate and teammate != player:
-            teammate.hero.exp += exp_values[exp_key + '_team']
+        if userid != player.userid:
+            teammate = get_player(userid)
+            give_exp(teammate, exp_key)
 
 
 # ======================================================================
@@ -122,7 +131,7 @@ def player_death(game_event):
     attacker = get_player(game_event.get_int('attacker'))
     assister = get_player(game_event.get_int('assister'))
 
-    # If defender exists (should always happen though)
+    # If defender exists
     if defender:
 
         # If attacker exists
@@ -132,17 +141,11 @@ def player_death(game_event):
             attacker.hero.execute_skills('on_kill', game_event)
             defender.hero.execute_skills('on_death', game_event)
 
-            # Give attacker exp from kill
-            attacker.hero.exp += exp_values['kill']
-
-            # Give attacker exp from headshot
+            # Give attacker exp from kill, headshot and weapon
+            give_exp(attacker, 'kill')
             if game_event.get_bool('headshot'):
-                attacker.hero.exp += exp_values['headshot']
-
-            # Give attacker exp from weapon
-            weapon = game_event.get_string('weapon')
-            if exp_values['weapons'][weapon]:
-                attacker.hero.exp += exp_values['weapons'][weapon]
+                give_exp(attacker, 'headshot')
+            give_exp(attacker, game_event.get_string('weapon'))
 
         # If there was no attacker, execute suicide skills
         else:
@@ -155,7 +158,7 @@ def player_death(game_event):
             assister.hero.execute_skills('on_assist', game_event)
 
             # Give assister exp
-            assister.hero.exp += exp_values['assist']
+            give_exp(assister, 'assist')
 
 
 @Event
@@ -191,64 +194,81 @@ def player_jump(game_event):
 def player_say(game_event):
     """Executes ultimate skills."""
 
+    # Get the player and the text
     player = get_player(game_event.get_int('userid'))
     if player:
         text = game_event.get_string('text')
-        if text == '!ultimate':
-            player.hero.execute_skills('on_ultimate', game_event)
 
+        # If text doesn't begin with the prefix, it's useless for us
+        if text[:len(chat_command_prefix)] != chat_command_prefix:
+            return
+
+        # Get the ACTUAL text without the prefix
+        text = text[len(chat_command_prefix):]
+
+        # If the text was '!ultimate', execute ultimate skills
+        if text == 'ultimate':
+            player.hero.execute_skills('on_ultimate', game_event)
+        
 
 @Event
 def round_end(game_event):
-    """Gives exp from round wins and losses."""
+    """Give exp from round win and loss."""
 
-    # Get the winner and loser
-    winner, loser = (game_event.get_int('winner') == 2
-                    and ('t', 'ct') or ('ct', 't'))
+    # Get the winning and losing teams
+    win, lose = game_event.get_int('winner') > 2 and ('ct', 't') or ('t', 'ct')
 
-    # Give winners exp
-    for userid in PlayerIter(is_filters=winner, return_types='userid'):
+    # Give all the winners exp
+    for userid in PlayerIter(is_filters=win, return_types='userid'):
         player = get_player(userid)
-        if player:
-            player.hero.exp += exp_values['round_win']
+        give_exp(player, 'round_win')
 
-    # Give losers exp
-    for userid in PlayerIter(is_filters=loser, return_types='userid'):
+    # Give all the losers exp
+    for userid in PlayerIter(is_filters=lose, return_types='userid'):
         player = get_player(userid)
-        if player:
-            player.hero.exp += exp_values['round_loss']
+        give_exp(player, 'round_loss')
 
 
 @Event
 def bomb_planted(game_event):
-    """Gives exp from bomb plant."""
+    """Give exp from bomb planting."""
 
-    _give_objective_exp(game_event.get_int('userid'), 't', 'bomb_plant')
+    player = get_player(game_event.get_int('userid'))
+    give_exp(player, 'bomb_plant')
+    give_team_exp(player, 'bomb_plant_team')
 
 
 @Event
 def bomb_exploded(game_event):
-    """Gives exp from bomb explode."""
+    """Give exp from bomb explosion."""
 
-    _give_objective_exp(game_event.get_int('userid'), 't', 'bomb_explode')
+    player = get_player(game_event.get_int('userid'))
+    give_exp(player, 'bomb_explode')
+    give_team_exp(player, 'bomb_explode_team')
 
 
 @Event
 def bomb_defused(game_event):
-    """Gives exp from bomb defuse."""
-    
-    _give_objective_exp(game_event.get_int('userid'), 'ct', 'bomb_defuse')
+    """Give exp from bomb defusion."""
+
+    player = get_player(game_event.get_int('userid'))
+    give_exp(player, 'bomb_defuse')
+    give_team_exp(player, 'bomb_defuse_team')
 
 
 @Event
 def hostage_follows(game_event):
-    """Gives exp from hostage pick up."""
+    """Give exp from hostage pick up."""
 
-    _give_objective_exp(game_event.get_int('userid'), 'ct', 'hostage_pickup')
+    player = get_player(game_event.get_int('userid'))
+    give_exp(player, 'hostage_pick_up')
+    give_team_exp(player, 'hostage_pick_up_team')
 
 
 @Event
 def hostage_rescued(game_event):
-    """Gives exp from hostage pick up."""
+    """Give exp from hostage rescue."""
 
-    _give_objective_exp(game_event.get_int('userid'), 'ct', 'hostage_rescue')
+    player = get_player(game_event.get_int('userid'))
+    give_exp(player, 'hostage_rescue')
+    give_team_exp(player, 'hostage_rescue_team')

@@ -231,8 +231,8 @@ class Hero(Entity):
             Unused skill points
         """
 
-        used_skill_points = sum(skill.level for skill in self.skills)
-        return self._level - used_skill_points
+        used_points = sum(skill.level * skill.cost for skill in self.skills)
+        return self._level - used_points
 
     def execute_skills(self, method_name, game_event):
         """Executes hero's skills and passives.
