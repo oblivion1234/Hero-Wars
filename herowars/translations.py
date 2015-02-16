@@ -2,7 +2,18 @@
 # >> IMPORTS
 # ======================================================================
 
+# Hero Wars
 from herowars.configs import default_language
+
+
+# ======================================================================
+# >> ALL DECLARATION
+# ======================================================================
+
+__all__ = (
+    'get_translation',
+    'default_language'
+)
 
 
 # ======================================================================
@@ -19,6 +30,9 @@ def get_translation(language, sub_dict, key):
         language: Language used for the translation
         sub_dict: Key of the sub dict
         key: Key of the actual string
+
+    Raises:
+        KeyError: If sub_dict is not found
 
     Returns:
         Translated string (if found)

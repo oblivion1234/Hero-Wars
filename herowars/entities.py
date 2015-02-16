@@ -6,6 +6,9 @@
 from herowars.tools import get_subclasses
 from herowars.tools import classproperty
 
+from herowars.configs import default_hero_category
+from herowars.configs import default_item_category
+
 # Source.Python
 from listeners.tick.repeat import TickRepeat
 
@@ -150,6 +153,7 @@ class Hero(Entity):
     passive_set = tuple()
     cost = 100
     max_level = 70
+    category = default_hero_category
 
     def __init__(self, level=0, exp=0):
         """Initializes a new Hero Wars hero.
@@ -337,3 +341,4 @@ class Item(Skill):
     cost = 10
     permanent = False  # Stays after death?
     limit = 0
+    category = default_item_category

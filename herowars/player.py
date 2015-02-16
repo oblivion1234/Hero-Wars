@@ -18,6 +18,7 @@ from herowars.configs import default_language
 
 # Source.Python
 from players.entity import PlayerEntity
+
 from players.helpers import index_from_userid
 
 
@@ -194,10 +195,18 @@ class _Player(PlayerEntity):
             ValueError: Hero not owned by the player
         """
 
+        # Make sure player owns the hero
         if hero not in self.heroes:
             raise ValueError('Hero {cls_id} not owned by {steamid}.'.format(
                 cls_id=hero.cls_id, steamid=self.steamid
             ))
+
+        # Destroy current hero's items
+        for item in self.hero.items:
+            if not item.permanent:
+                self.hero.items.remove(item)
+
+        # Save his current hero and change to the new one
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
 

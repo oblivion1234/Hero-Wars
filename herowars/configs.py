@@ -1,17 +1,28 @@
 # ======================================================================
+# >> IMPORTS
+# ======================================================================
+
+# Python
+import os
+
+
+# ======================================================================
 # >> CONFIGURATIONS
 # ======================================================================
 
-
-# Default language abbreviation
+# Abbreviation for default language
 default_language = 'en'
 
 
-# Chat command prefix, default is '!'
+# Prefix needed for chat commands
 chat_command_prefix = '!'
 
 
-# Dictionary for experience point values
+# (Relative) path to database file used by Hero Wars
+database_path = os.path.dirname(__file__) + '/herowars.db'
+
+
+# Amounts of experience points gained from objectives
 exp_values = dict(
 
     # Kill values
@@ -40,13 +51,16 @@ exp_values = dict(
 )
 
 
-# Database file used by Hero Wars
-database_path = './herowars.db'
-
-
-# Starting heroes given when a player joins for the first time
-# Use class names for identifying the Hero classes
+# Starting heroes for when a player joins the server for the first time
+# > Use class names for identifying the Hero classes
 starting_heroes = (
     'UndeadMage',
-
 )
+
+
+# Hero category used when the category is not defined
+default_hero_category = 'Others'
+
+
+# Item category used when the category is not defined
+default_item_category = 'Others'

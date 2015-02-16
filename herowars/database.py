@@ -4,6 +4,7 @@
 
 # Hero Wars
 from herowars.entities import Hero
+
 from herowars.tools import find_element
 
 # Python
