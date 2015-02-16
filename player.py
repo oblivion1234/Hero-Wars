@@ -13,6 +13,7 @@ from herowars.entities import Hero
 from herowars.tools import find_element
 
 from herowars.configs import database_path
+from herowars.configs import starting_heroes
 
 # Source.Python
 from players.entity import PlayerEntity
@@ -78,12 +79,14 @@ def create_player(userid):
     load_player_data(database_path, player)
 
     # Make sure player gets the starting hero(es)
-    if not player.heroes:
-        first_hero_cls = Hero.get_subclasses()[0]
-        player.heroes.append(first_hero_cls())
+    heroes = Hero.get_subclasses()
+    for cls_id in starting_heroes:
+        hero_cls = find_element(heroes, 'cls_id', cls_id)
+        if hero_cls and not find_element(player.heroes, 'cls_id', cls_id):
+            player.heroes.append(hero_cls())
 
     # Make sure the player has a current hero
-    if not player.hero:
+    if not player.hero and player.heroes:
         player._hero = player.heroes[0]
 
     # Add the player to the global list and return the player
