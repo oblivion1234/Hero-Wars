@@ -342,3 +342,12 @@ class Item(Skill):
     permanent = False  # Stays after death?
     limit = 0
     category = default_item_category
+    @property
+    def sell_value(self):
+        """Getter for item's sell value.
+
+        Returns:
+            Item's sell value
+        """
+
+        return int(self.cost * .5)
