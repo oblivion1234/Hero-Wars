@@ -48,7 +48,7 @@ def get_translation(language, sub_dict, key):
     if sub_dict in lang_dict:
 
         # Return the proper translation
-        return '[HW] {tr}'.format(tr=lang_dict[sub_dict].get(key, '#null_str'))
+        return '{tr}'.format(tr=lang_dict[sub_dict].get(key, '#null_str'))
 
     # Else raise an error of the sub dict
     raise KeyError('Invalid sub dict key: {key}'.format(key=sub_dict))
@@ -93,9 +93,51 @@ _translations = {
             hostage_rescue_team = '+{exp} exp for a hostage being rescued.'
         ),
 
-        # Menus
-        'menus': dict(
+        # Menu messages
+        'menu_messages': dict(
+
+            # Item values
+            no_items_to_buy = 'There are no items to buy.',
+            no_owned_items = "You don't have any items",
+            not_enough_cash = "You don't have enough cash (${cash}/${cost}).",
+
+            bought_item = 'You bought item {name} for ${cost}.',
+            sold_item = 'You bought item {name} for ${cost}.',
+
+            # Hero values
+            no_heroes_to_buy = 'There are no heroes to buy.',
+            no_owned_heroes = "You don't have any heroes.",
+            not_enough_gold = "You don't have enough gold ({gold}/{cost}).",
+
+            bought_hero = 'You bought hero {name} for {cost} gold.',
+            changed_hero = 'You changed hero to {name}.',
+
+            # Skill values
+            skill_leveled = 'Skill {name} is now level {level}.',
+            skill_points_reset = 'Skill points have been reset.'
             
+        ),
+
+        # Menu options
+        'menu' : dict(
+
+            # Mainmenu
+            buy_heroes = 'Buy Heroes',
+            owned_heroes = 'Owned Heroes',
+            current_hero = 'Current Hero',
+
+            # Headers
+            buy_items = 'Buy Items',
+            item_categories = 'Item Categories',
+            sell_items = 'Sell Items',
+
+            # Info
+            available_skill_points = 'Skill Points: {skill_points}',
+
+            # Options
+            reset_skill_points = 'Reset Skill Points',
+            option_buy = 'Buy',
+            option_change = 'Change'
         )
     }
 }
