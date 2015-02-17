@@ -18,13 +18,18 @@ from herowars.configs import chat_command_prefix
 
 from herowars.translations import get_translation
 
+from herowars.menus import main_menu
+
 from herowars.heroes import *
 from herowars.items import *
 
 # Source.Python 
 from events import Event
-
 from filters.players import PlayerIter
+
+from engines.server import engine_server
+
+        
 
 
 # ======================================================================
@@ -44,6 +49,10 @@ def load():
         raise NotImplementedError('No heroes on the server.')
     setup_database(database_path)
 
+    engine_server.server_command('mp_restartgame 1\n')
+
+
+
 
 def give_exp(player, exp_key):
     """Gives player exp and sends him a message about it.
@@ -57,8 +66,8 @@ def give_exp(player, exp_key):
         exp = exp_values.get(exp_key, 0)
         if exp > 0:
             player.exp += exp
-            translation = get_translation(player.language, 'exp', exp_key)
-            player.signal(translation.format(exp=exp))
+            translation = get_translation(player.translation_language, 'exp', exp_key)
+            player.send_message(translation.format(exp=exp))
 
 
 def give_team_exp(player, exp_key):
@@ -135,7 +144,7 @@ def player_death(game_event):
     # If defender exists
     if defender:
 
-        # And if attacker exists
+        # If attacker exists
         if attacker:
 
             # Execute kill and death skills
@@ -148,19 +157,18 @@ def player_death(game_event):
                 give_exp(attacker, 'headshot')
             give_exp(attacker, game_event.get_string('weapon'))
 
-        # If there was no attacker, execute defender's suicide skills
-        elif not game_event.get_int('attacker'):
+        # If there was no attacker, execute suicide skills
+        else:
             defender.hero.execute_skills('on_suicide', game_event)
 
-        # Execute assister's skills and give him exp
+        # If there was an assister
         if assister:
-            assister.hero.execute_skills('on_assist', game_event)
-            give_exp(assister, 'assist')
 
-        # Finally, remove items that are not "permanent"
-        for item in defender.hero.items:
-            if not item.permanent:
-                defender.hero.items.remove(item)
+            # Execute assist skills
+            assister.hero.execute_skills('on_assist', game_event)
+
+            # Give assister exp
+            give_exp(assister, 'assist')
 
 
 @Event
@@ -194,7 +202,7 @@ def player_jump(game_event):
 
 @Event
 def player_say(game_event):
-    """Executes ultimate skills."""
+    """Executes ultimate skills and opens the main menu."""
 
     # Get the player and the text
     player = get_player(game_event.get_int('userid'))
@@ -211,28 +219,28 @@ def player_say(game_event):
         # If the text was '!ultimate', execute ultimate skills
         if text == 'ultimate':
             player.hero.execute_skills('on_ultimate', game_event)
+
+        # If the text was '!hw' or '!herowars', opens the main menu
+        elif text in ('hw', 'herowars'):
+            main_menu(player.index).send(player.index)
         
 
 @Event
 def round_end(game_event):
     """Give exp from round win and loss."""
 
-    # Get the winning team
-    winner = game_event.get_int('winner')
+    # Get the winning and losing teams
+    win, lose = game_event.get_int('winner') > 2 and ('ct', 't') or ('t', 'ct')
 
-    # Loop through all the players' userids
-    for userid in PlayerIter(is_filters=('ct', 't'), return_types='userid'):
-
-        # Get the player
+    # Give all the winners exp
+    for userid in PlayerIter(is_filters=win, return_types='userid'):
         player = get_player(userid)
+        give_exp(player, 'round_win')
 
-        # Give player win exp
-        if player.get_team() == winner:
-            give_exp(player, 'round_win')
-
-        # Or loss exp
-        else:
-            give_exp(player, 'round_loss')
+    # Give all the losers exp
+    for userid in PlayerIter(is_filters=lose, return_types='userid'):
+        player = get_player(userid)
+        give_exp(player, 'round_loss')
 
 
 @Event
