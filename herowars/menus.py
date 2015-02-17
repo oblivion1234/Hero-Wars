@@ -166,12 +166,12 @@ def main_menu(ply_index):
     menu.extend([
         Text('Hero Wars'),
         Text('-'*20),
-        Option(get_translation(player.translation_language, 'menu', 'buy_heroes'), 1),
-        Option(get_translation(player.translation_language, 'menu', 'owned_heroes'), 2),
-        Option(get_translation(player.translation_language, 'menu', 'current_hero'), 3),
+        Option(get_translation(player.lang_key, 'menu', 'buy_heroes'), 1),
+        Option(get_translation(player.lang_key, 'menu', 'owned_heroes'), 2),
+        Option(get_translation(player.lang_key, 'menu', 'current_hero'), 3),
         Text('-'*20),
-        Option(get_translation(player.translation_language, 'menu', 'buy_items'), 4),
-        Option(get_translation(player.translation_language, 'menu', 'sell_items'), 5),
+        Option(get_translation(player.lang_key, 'menu', 'buy_items'), 4),
+        Option(get_translation(player.lang_key, 'menu', 'sell_items'), 5),
         Text('-'*20),
         Text('Gold: {gold}'.format(gold=player.gold)),
         Text('-'*20),
@@ -200,7 +200,6 @@ def _main_menu_callback(menu, ply_index, choice):
 # >> BUY HEROES -MENU
 # ======================================================================
 
-
 def buy_hero_menu(ply_index):
     """Menu to display all non-owned heroes.
 
@@ -211,7 +210,7 @@ def buy_hero_menu(ply_index):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(
-        title=get_translation(player.translation_language, 'menu', 'buy_heroes'), 
+        title=get_translation(player.lang_key, 'menu', 'buy_heroes'), 
         select_callback=_buy_hero_menu_callback
     )
     menu.option8 = Option('Back', main_menu)
@@ -235,7 +234,7 @@ def buy_hero_menu(ply_index):
 
     if not menu:
         player.send_message(get_translation(
-            player.translation_language, 'menu_messages', 'no_heroes_to_buy'))
+            player.lang_key, 'menu_messages', 'no_heroes_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
 
     return menu
@@ -262,7 +261,7 @@ def item_categories_menu(ply_index):
     """
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(
-        title=get_translation(player.translation_language, 'menu', 'item_categories'), 
+        title=get_translation(player.lang_key, 'menu', 'item_categories'), 
         select_callback=_item_categories_menu_callback
     )
     menu.option8 = Option('Back', main_menu)
@@ -286,7 +285,7 @@ def item_categories_menu(ply_index):
     if not menu:
         print(menu)
         player.send_message(get_translation(
-            player.translation_language, 'menu_messages', 'no_items_to_buy'))
+            player.lang_key, 'menu_messages', 'no_items_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
 
     return menu
@@ -312,7 +311,7 @@ def buy_items_menu(ply_index, chosen_category='Default'):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(
-        title=get_translation(player.translation_language, 'menu', 'buy_items'), 
+        title=get_translation(player.lang_key, 'menu', 'buy_items'), 
         select_callback=_buy_items_menu_callback
     )
     menu.option8 = Option('Back', item_categories_menu)
@@ -338,7 +337,7 @@ def buy_items_menu(ply_index, chosen_category='Default'):
 
     if not menu:
         player.send_message(get_translation(
-            player.translation_language, 'menu_messages', 'no_items_to_buy'))
+            player.lang_key, 'menu_messages', 'no_items_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
     
     return menu
@@ -357,7 +356,7 @@ def _buy_items_menu_callback(menu, ply_index, choice):
     # Check if player can buy the item
     if player.cash < item_cls.cost:
         translation = get_translation(
-            player.translation_language, 'menu_messages', 'not_enough_cash')
+            player.lang_key, 'menu_messages', 'not_enough_cash')
 
         player.send_message(translation.format(
             cash=player.cash, 
@@ -372,7 +371,7 @@ def _buy_items_menu_callback(menu, ply_index, choice):
     player.cash -= item_cls.cost
     player.hero.items.append(item_cls())
     translation = get_translation(
-        player.translation_language, 'menu_messages', 'bought_item')
+        player.lang_key, 'menu_messages', 'bought_item')
 
     player.send_message(translation.format(
         name=item_cls.name, 
@@ -399,7 +398,7 @@ def owned_heroes_menu(ply_index):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(
-        title=get_translation(player.translation_language, 'menu', 'owned_heroes'), 
+        title=get_translation(player.lang_key, 'menu', 'owned_heroes'), 
         select_callback=_owned_heroes_menu_callback
     )
     menu.option8 = Option('Back', main_menu)
@@ -415,7 +414,7 @@ def owned_heroes_menu(ply_index):
 
     if not menu:
         player.send_message(get_translation(
-            player.translation_language, 'menu_messages', 'no_owned_heroes'))
+            player.lang_key, 'menu_messages', 'no_owned_heroes'))
         menu = menu.option8.value(ply_index)  # Refresh
 
     return menu
@@ -443,7 +442,7 @@ def sell_items_menu(ply_index):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(
-        title=get_translation(player.translation_language, 'menu', 'sell_items'), 
+        title=get_translation(player.lang_key, 'menu', 'sell_items'), 
         select_callback=_sell_items_menu_callback
     )
     menu.option8 = Option('Back', main_menu)
@@ -459,7 +458,7 @@ def sell_items_menu(ply_index):
 
     if not menu:
         player.send_message(get_translation(
-            player.translation_language, 'menu_messages', 'no_owned_items'))
+            player.lang_key, 'menu_messages', 'no_owned_items'))
         menu = menu.option8.value(ply_index)  # Refresh
     
     return menu
@@ -477,7 +476,7 @@ def _sell_items_menu_callback(menu, ply_index, choice):
     player.cash += item.sell_value
 
     translation = get_translation(
-        player.translation_language, 'menu_messages', 'sold_item')
+        player.lang_key, 'menu_messages', 'sold_item')
 
     player.send_message(translation.format(
         name=item.name, 
@@ -512,7 +511,7 @@ def hero_info_menu(ply_index, hero_cls=None):
     menu.page_info = False
     menu.selected_hero = hero_cls  # Callback needs to know the hero
     menu.option7 = Option(get_translation(
-        player.translation_language, 'menu', 'option_buy'), _buy_hero)
+        player.lang_key, 'menu', 'option_buy'), _buy_hero)
     menu.option8 = Option('Back', buy_hero_menu)
 
     # Add all hero's skills and descriptions to the menu
@@ -539,7 +538,7 @@ def _buy_hero(menu, ply_index, choice):
     # Check if player can buy the hero
     if player.gold < hero.cost:
             translation = get_translation(
-                player.translation_language, 'menu_messages', 'not_enough_gold')
+                player.lang_key, 'menu_messages', 'not_enough_gold')
             player.send_message(translation.format(
                 name=hero.name, 
                 cost=hero.cost
@@ -557,7 +556,7 @@ def _buy_hero(menu, ply_index, choice):
     # Change the hero automatically
     player.hero = hero
     translation = get_translation(
-        player.translation_language, 'menu_messages', 'bought_hero')
+        player.lang_key, 'menu_messages', 'bought_hero')
     player.send_message(translation.format(
         name=hero.name, 
         cost=hero.cost
@@ -596,7 +595,7 @@ def owned_hero_info_menu(ply_index, hero=None):
     menu.page_info = False
     menu.selected_hero = hero  # Callback needs to know the hero
     menu.option7 = Option(get_translation(
-        player.translation_language, 'menu', 'option_change'), _change_hero)
+        player.lang_key, 'menu', 'option_change'), _change_hero)
     menu.option8 = Option('Back', owned_heroes_menu)
 
     # Add all the hero's skills, their levels and descriptions to the menu
@@ -621,7 +620,7 @@ def _change_hero(menu, ply_index, choice):
     hero = menu.selected_hero
     player.hero = hero
     translation = get_translation(
-        player.translation_language, 'menu_messages', 'changed_hero')
+        player.lang_key, 'menu_messages', 'changed_hero')
     player.send_message(translation.format(name=hero.name))
 
 
@@ -637,7 +636,6 @@ def _owned_hero_info_menu_callback(menu, ply_index, choice):
 # ======================================================================
 # >> OWNED HEROINFO -MENU
 # ======================================================================
-
 
 def current_hero_info_menu(ply_index):
     """Current Hero Info menu.
@@ -660,12 +658,12 @@ def current_hero_info_menu(ply_index):
     menu.page_info = False
 
     menu.option7 = Option(get_translation(
-        player.translation_language, 'menu', 'reset_skill_points'), _reset_skill_points)
+        player.lang_key, 'menu', 'reset_skill_points'), _reset_skill_points)
     menu.option8 = Option('Back', main_menu)
 
     # Override the bottom seperator to display available skill points
     translation = get_translation(
-        player.translation_language, 'menu', 'available_skill_points')
+        player.lang_key, 'menu', 'available_skill_points')
     menu.bottom_seperator = '-'*30+'\n'+translation.format(
         skill_points=hero.skill_points)+'\n'+'-'*30
 
@@ -691,7 +689,7 @@ def _reset_skill_points(menu, ply_index, choice):
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
     player.send_message(get_translation(
-        player.translation_language, 'menu_messages', 'skill_points_reset'))
+        player.lang_key, 'menu_messages', 'skill_points_reset'))
     for skill in hero.skills:
         skill.level = 0
 
@@ -712,7 +710,7 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
     if hero.skill_points > skill.cost:
         skill.level += 1
         translation = get_translation(
-            player.translation_language, 'menu_messages', 'skill_leveled')
+            player.lang_key, 'menu_messages', 'skill_leveled')
         player.send_message(translation.format(
             name=skill.name, 
             level=skill.level

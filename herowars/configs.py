@@ -10,8 +10,8 @@ import os
 # >> CONFIGURATIONS
 # ======================================================================
 
-# Abbreviation for default language
-default_language = 'en'
+# Default language key for translations
+default_lang_key = 'en'
 
 
 # Prefix needed for chat commands
@@ -54,7 +54,6 @@ exp_values = dict(
 # Starting heroes for when a player joins the server for the first time
 # > Use class names for identifying the Hero classes
 starting_heroes = (
-    'UndeadMage',
 )
 
 
@@ -64,3 +63,6 @@ default_hero_category = 'Others'
 
 # Item category used when the category is not defined
 default_item_category = 'Others'
+
+# Items' default sell value's multiplier
+item_sell_value_multiplier = 0.5

@@ -4,6 +4,7 @@
 
 # Python
 from random import randint
+
 from functools import wraps, WRAPPER_ASSIGNMENTS
 
 # Source.Python

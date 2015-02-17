@@ -14,12 +14,13 @@ from herowars.tools import find_element
 
 from herowars.configs import database_path
 from herowars.configs import starting_heroes
-from herowars.configs import default_language
+from herowars.configs import default_lang_key
 
 # Source.Python
 from players.entity import PlayerEntity
 
 from players.helpers import index_from_userid
+
 from messages import SayText2
 
 
@@ -131,23 +132,23 @@ class _Player(PlayerEntity):
         gold: Player's Hero Wars gold, used to purchase heroes and items
         hero: Player's hero currently in use
         heroes: List of owned heroes
-        language: Language used to display messages and menus
+        lang_key: Language key used to display messages and menus
     """
 
-    def __new__(cls, index, gold=0, language=default_language):
+    def __new__(cls, index, gold=0, lang_key=default_lang_key):
         """Creates a new Hero Wars player.
 
         Args:
             index: Player's index
             gold: Player's Hero Wars gold
-            language: Language used for messages and menus
+            lang_key: Language key used for messages and menus
         """
 
         self = super().__new__(cls, index)
         self._gold = gold
         self._hero = None
         self.heroes = []
-        self.translation_language = language
+        self.lang_key = lang_key
         return self
 
     @property
@@ -211,7 +212,7 @@ class _Player(PlayerEntity):
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
 
-    def send_message(self, message):
+    def signal(self, message):
         """Sends a message to a player using SayText2.
 
         Args:

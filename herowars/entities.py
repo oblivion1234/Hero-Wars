@@ -8,6 +8,7 @@ from herowars.tools import classproperty
 
 from herowars.configs import default_hero_category
 from herowars.configs import default_item_category
+from herowars.configs import item_sell_value_multiplier
 
 # Source.Python
 from listeners.tick.repeat import TickRepeat
@@ -342,6 +343,7 @@ class Item(Skill):
     permanent = False  # Stays after death?
     limit = 0
     category = default_item_category
+
     @property
     def sell_value(self):
         """Getter for item's sell value.
@@ -350,4 +352,4 @@ class Item(Skill):
             Item's sell value
         """
 
-        return int(self.cost * .5)
+        return int(self.cost * item_sell_value_multiplier)
