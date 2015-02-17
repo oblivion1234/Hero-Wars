@@ -20,6 +20,7 @@ from herowars.configs import default_language
 from players.entity import PlayerEntity
 
 from players.helpers import index_from_userid
+from messages import SayText2
 
 
 # ======================================================================
@@ -146,7 +147,7 @@ class _Player(PlayerEntity):
         self._gold = gold
         self._hero = None
         self.heroes = []
-        self.language = language
+        self.translation_language = language
         return self
 
     @property
@@ -210,7 +211,7 @@ class _Player(PlayerEntity):
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
 
-    def signal(self, message):
+    def send_message(self, message):
         """Sends a message to a player using SayText2.
 
         Args:
