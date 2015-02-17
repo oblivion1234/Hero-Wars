@@ -19,6 +19,7 @@ from herowars.configs import chat_command_prefix
 from herowars.translations import get_translation
 
 from herowars.heroes import *
+from herowars.items import *
 
 # Source.Python 
 from events import Event
