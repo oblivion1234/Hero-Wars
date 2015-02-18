@@ -62,7 +62,7 @@ def give_exp(player, exp_key):
     if player and player.hero:
         exp = exp_values.get(exp_key, 0)
         if exp > 0:
-            player.exp += exp
+            player.hero.exp += exp
             translation = get_translation(player.lang_key, 'exp', exp_key)
             player.signal(translation.format(exp=exp))
 

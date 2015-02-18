@@ -53,8 +53,7 @@ exp_values = dict(
 
 # Starting heroes for when a player joins the server for the first time
 # > Use class names for identifying the Hero classes
-starting_heroes = (
-)
+starting_heroes = tuple()
 
 
 # Hero category used when the category is not defined

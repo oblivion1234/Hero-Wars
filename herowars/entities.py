@@ -223,6 +223,7 @@ class Hero(Entity):
         if exp < 0:
             raise ValueError('Attempt to set negative exp for a hero.')
         if exp != self._exp:
+            self._exp = exp
             # Increase levels if necessary
             while self.exp >= self.required_exp:
                 self._exp -= self.required_exp
