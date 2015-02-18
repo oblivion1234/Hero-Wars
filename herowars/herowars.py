@@ -119,8 +119,8 @@ def player_spawn(game_event):
         player = create_player(userid)
 
     # Execute spawn skills if the player's on a valid team
-    if game_event.get_int('teamnum') > 1:
-        player.hero.execute_skills('on_spawn', game_event)
+    if game_event.get_int('teamnum') > 1 and player.hero:
+        player.hero.execute_skills('on_spawn', {'player': player})
 
 
 @Event
@@ -129,64 +129,79 @@ def player_death(game_event):
 
     Also gives exp from kill and assist."""
 
-    # Set 'defender' key and remove 'userid' key
-    game_event.set_int('defender', game_event.get_int('userid'))
-    game_event.set_int('userid', 0)
-
-    # Get the players
-    defender = get_player(game_event.get_int('defender'))
-    attacker = get_player(game_event.get_int('attacker'))
-    assister = get_player(game_event.get_int('assister'))
+    # Get the defender
+    defender = get_player(game_event.get_int('userid'))
 
     # If defender exists
     if defender:
 
-        # And if attacker exists
-        if attacker:
+        # Get attacker and assister
+        attacker = get_player(game_event.get_int('attacker'))
+        assister = get_player(game_event.get_int('assister'))
+
+        # Create the event arguments dict
+        eargs = {
+            'attacker': attacker,
+            'defender': defender,
+            'assister': assister,
+            'headshot': game_event.get_bool('headshot'),
+            'weapon': game_event.get_string('weapon')
+        }
+
+        # If attacker exists
+        if attacker and attacker.hero and defender.hero:
 
             # Execute kill and death skills
-            attacker.hero.execute_skills('on_kill', game_event)
-            defender.hero.execute_skills('on_death', game_event)
+            attacker.hero.execute_skills('on_kill', eargs)
+            defender.hero.execute_skills('on_death', eargs)
 
             # Give attacker exp from kill, headshot and weapon
             give_exp(attacker, 'kill')
-            if game_event.get_bool('headshot'):
+            if eargs['headshot']:
                 give_exp(attacker, 'headshot')
-            give_exp(attacker, game_event.get_string('weapon'))
+            give_exp(attacker, eargs['weapon'])
 
         # If there was no attacker, execute defender's suicide skills
         elif not game_event.get_int('attacker'):
-            defender.hero.execute_skills('on_suicide', game_event)
+            defender.hero.execute_skills('on_suicide', eargs)
 
-        # Execute assister's skills and give him exp
-        if assister:
-            assister.hero.execute_skills('on_assist', game_event)
+        # If assister exists, execute assist skills and give exp
+        if assister and assister.hero:
+            assister.hero.execute_skills('on_assist', eargs)
             give_exp(assister, 'assist')
 
         # Finally, remove items that are not "permanent"
-        for item in defender.hero.items:
-            if not item.permanent:
-                defender.hero.items.remove(item)
+        if defender.hero:
+            for item in defender.hero.items:
+                if not item.permanent:
+                    defender.hero.items.remove(item)
 
 
 @Event
 def player_hurt(game_event):
     """Executes attack and defend skills."""
 
-    # Set 'defender' key and remove 'userid' key
-    game_event.set_int('defender', game_event.get_int('userid'))
-    game_event.set_int('userid', 0)
-
-    # Get the players
-    defender = get_player(game_event.get_int('defender'))
+    # Get defender and attacker
+    defender = get_player(game_event.get_int('userid'))
     attacker = get_player(game_event.get_int('attacker'))
 
     # If both defender and attacker exist
     if defender and attacker:
 
+        # Create event arguments dict
+        eargs = {
+            'attacker': attacker,
+            'defender': defender,
+            'damage': game_event.get_int('dmg_health'),
+            'damage_armor': game_event.get_int('dmg_armor'),
+            'weapon': game_event.get_string('weapon')
+        }
+
         # Execute attack and defend skills
-        attacker.hero.execute_skills('on_attack', game_event)
-        defender.hero.execute_skills('on_defend', game_event)
+        if attacker.hero:
+            attacker.hero.execute_skills('on_attack', eargs)
+        if defender.hero:
+            defender.hero.execute_skills('on_defend', eargs)
 
 
 @Event
@@ -194,13 +209,13 @@ def player_jump(game_event):
     """Executes jump skills."""
 
     player = get_player(game_event.get_int('userid'))
-    if player:
-        player.hero.execute_skills('on_jump', game_event)
+    if player and player.hero:
+        player.hero.execute_skills('on_jump', {'player': player})
 
 
 @Event
 def player_say(game_event):
-    """Executes ultimate skills."""
+    """Executes ultimate skills and opens the menu."""
 
     # Get the player and the text
     player = get_player(game_event.get_int('userid'))
@@ -215,8 +230,8 @@ def player_say(game_event):
         text = text[len(chat_command_prefix):]
 
         # If the text was '!ultimate', execute ultimate skills
-        if text == 'ultimate':
-            player.hero.execute_skills('on_ultimate', game_event)
+        if text == 'ultimate' and player.hero:
+            player.hero.execute_skills('on_ultimate', {'player': player})
 
         # If the text was '!hw' or '!herowars', open main menu
         elif text in ('hw', 'herowars'):
