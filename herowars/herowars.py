@@ -23,6 +23,8 @@ from herowars.menus import main_menu
 from herowars.heroes import *
 from herowars.items import *
 
+import herowars.commandlib as cmdlib
+
 # Source.Python 
 from events import Event
 
@@ -52,17 +54,19 @@ def load():
 
 
 def give_gold(player, gold_key):
-    """Gives player gold.
+    """Gives player gold and sends him a message about it.
 
     Args:
         player: Player who to give gold to
-        gold_key: Key used for finding the gold value
+        gold_key: Key used for finding the gold value and translation
     """
 
     if player:
         gold = gold_values.get(gold_key, 0)
         if gold > 0:
             player.gold += gold
+            translation = get_translation(player.lang_key, 'gold', gold_key)
+            cmdlib.tell(player, translation.format(gold=gold))
 
 
 def give_exp(player, exp_key):
@@ -78,7 +82,7 @@ def give_exp(player, exp_key):
         if exp > 0:
             player.hero.exp += exp
             translation = get_translation(player.lang_key, 'exp', exp_key)
-            player.signal(translation.format(exp=exp))
+            cmdlib.tell(player, translation.format(exp=exp))
 
 
 def give_team_exp(player, exp_key):

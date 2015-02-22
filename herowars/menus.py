@@ -2,6 +2,20 @@
 # >> IMPORTS
 # ======================================================================
 
+# Hero Wars
+from herowars.entities import Hero
+from herowars.entities import Skill
+from herowars.entities import Item
+
+from herowars.player import get_player
+
+from herowars.tools import find_element
+from herowars.tools import find_elements
+
+from herowars.translations import get_translation
+
+import herowars.commandlib as cmdlib
+
 # Python
 from functools import wraps
 
@@ -14,18 +28,6 @@ from menus import Text
 from menus.base import _translate_text
 
 from players.helpers import userid_from_index
-
-# Hero Wars
-from herowars.entities import Hero
-from herowars.entities import Skill
-from herowars.entities import Item
-
-from herowars.player import get_player
-
-from herowars.tools import find_element
-from herowars.tools import find_elements
-
-from herowars.translations import get_translation
 
 
 
@@ -233,7 +235,7 @@ def buy_hero_menu(ply_index):
         ))
 
     if not menu:
-        player.signal(get_translation(
+        cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_heroes_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
 
@@ -284,7 +286,7 @@ def item_categories_menu(ply_index):
 
     if not menu:
         print(menu)
-        player.signal(get_translation(
+        cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_items_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
 
@@ -336,7 +338,7 @@ def buy_items_menu(ply_index, chosen_category='Default'):
             ))
 
     if not menu:
-        player.signal(get_translation(
+        cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_items_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
     
@@ -358,7 +360,7 @@ def _buy_items_menu_callback(menu, ply_index, choice):
         translation = get_translation(
             player.lang_key, 'menu_messages', 'not_enough_cash')
 
-        player.signal(translation.format(
+        cmdlib.tell(player, translation.format(
             cash=player.cash, 
             cost=item_cls.cost
         ))
@@ -373,7 +375,7 @@ def _buy_items_menu_callback(menu, ply_index, choice):
     translation = get_translation(
         player.lang_key, 'menu_messages', 'bought_item')
 
-    player.signal(translation.format(
+    cmdlib.tell(player, translation.format(
         name=item_cls.name, 
         cost=item_cls.cost
     ))
@@ -413,7 +415,7 @@ def owned_heroes_menu(ply_index):
         ))
 
     if not menu:
-        player.signal(get_translation(
+        cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_owned_heroes'))
         menu = menu.option8.value(ply_index)  # Refresh
 
@@ -457,7 +459,7 @@ def sell_items_menu(ply_index):
         ))
 
     if not menu:
-        player.signal(get_translation(
+        cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_owned_items'))
         menu = menu.option8.value(ply_index)  # Refresh
     
@@ -478,7 +480,7 @@ def _sell_items_menu_callback(menu, ply_index, choice):
     translation = get_translation(
         player.lang_key, 'menu_messages', 'sold_item')
 
-    player.signal(translation.format(
+    cmdlib.tell(player, translation.format(
         name=item.name, 
         cost=item.cost
     ))
@@ -539,7 +541,7 @@ def _buy_hero(menu, ply_index, choice):
     if player.gold < hero.cost:
             translation = get_translation(
                 player.lang_key, 'menu_messages', 'not_enough_gold')
-            player.signal(translation.format(
+            cmdlib.tell(player, translation.format(
                 name=hero.name, 
                 cost=hero.cost
             ))
@@ -557,7 +559,7 @@ def _buy_hero(menu, ply_index, choice):
     player.hero = hero
     translation = get_translation(
         player.lang_key, 'menu_messages', 'bought_hero')
-    player.signal(translation.format(
+    cmdlib.tell(player, translation.format(
         name=hero.name, 
         cost=hero.cost
     ))
@@ -621,7 +623,7 @@ def _change_hero(menu, ply_index, choice):
     player.hero = hero
     translation = get_translation(
         player.lang_key, 'menu_messages', 'changed_hero')
-    player.signal(translation.format(name=hero.name))
+    cmdlib.tell(player, translation.format(name=hero.name))
 
 
 def _owned_hero_info_menu_callback(menu, ply_index, choice):
@@ -688,7 +690,7 @@ def _reset_skill_points(menu, ply_index, choice):
     """
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
-    player.signal(get_translation(
+    cmdlib.tell(player, get_translation(
         player.lang_key, 'menu_messages', 'skill_points_reset'))
     for skill in hero.skills:
         skill.level = 0
@@ -711,7 +713,7 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
         skill.level += 1
         translation = get_translation(
             player.lang_key, 'menu_messages', 'skill_leveled')
-        player.signal(translation.format(
+        cmdlib.tell(player, translation.format(
             name=skill.name, 
             level=skill.level
         ))

@@ -96,6 +96,18 @@ _translations = {
             hostage_rescue_team = "+{exp} exp for a hostage being rescued"
         ),
 
+        # Gold values
+        'gold': dict(
+            
+            # Kill values
+            kill = "+{gold} gold for a kill.",
+            assist = "+{gold} gold for an assist.",
+
+            # Round values
+            round_win = "+{gold} gold for winning a round.",
+            round_lose = "+{gold} gold for losing a round.",
+        ),
+
         # Menu messages
         'menu_messages': dict(
 
