@@ -36,9 +36,9 @@ class HealthSpeed(Skill):
         cmdlib.tell(player, '+30% speed from Passive.')
 
     @chance(33)
-    def on_attack(self, player, **eargs):
-        player.health += 5
-        cmdlib.tell(player, '+5 health from Passive.')
+    def on_attack(self, attacker, **eargs):
+        attacker.health += 5
+        cmdlib.tell(attacker, '+5 health from Passive.')
 
         
 @TestHero1.skill
