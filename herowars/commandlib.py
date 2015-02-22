@@ -16,7 +16,9 @@ from listeners.tick import tick_delays
 # ======================================================================
 
 __all__ = (
-    'burn', 'freeze', 'noclip', 'set_property'
+    'burn', 'freeze', 'noclip', 'jetpack',
+    'boost_velocity',
+    'set_property'
 )
 
 
@@ -24,7 +26,7 @@ __all__ = (
 # >> GLOBALS
 # ======================================================================
 
-_effects = {key: defaultdict(set) for key in __all__ if key != 'set_property'}
+_effects = {key: defaultdict(set) for key in __all__[:4]}
 
 
 # ======================================================================
@@ -103,3 +105,34 @@ def _unnoclip(player, delay):
     _effects['noclip'][player.index].discard(delay)
     if not _effects['noclip'][player.index]:
         player.noclip = False
+
+
+def jetpack(player, duration):
+    """Jetpacks a player."""
+
+    player.jetpack = True
+    delay = tick_delays.delay(duration, _unjetpack)
+    delay.args = (player, delay)
+    _effects['jetpack'][player.index].add(delay)
+
+
+def _unjetpack(player, delay):
+    """Unjetpacks a player."""
+
+    _effects['jetpack'][player.index].discard(delay)
+    if not _effects['jetpack'][player.index]:
+        player.jetpack = False
+
+
+def boost_velocity(player, x_mul=1.0, y_mul=1.0, z_mul=1.0):
+    """Boosts player's velocity."""
+
+    base_str = 'CBasePlayer.localdata.m_vecBaseVelocity'
+    new_values = (
+        player.get_property_float('{0}[0]'.format(base_str)) * x_mul,
+        player.get_property_float('{0}[1]'.format(base_str)) * y_mul,
+        player.get_property_float('{0}[2]'.format(base_str)) * z_mul
+    )
+    player.set_property_float(
+        base_str, ','.join(str(value) for value in new_values)
+    )
