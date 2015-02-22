@@ -2,6 +2,9 @@
 # >> IMPORTS
 # ======================================================================
 
+# Hero Wars
+from herowars.player import get_player
+
 # Python 3
 from collections import defaultdict
 
@@ -12,12 +15,15 @@ from listeners.tick import tick_delays
 
 from filters.players import PlayerIter
 
+
 # ======================================================================
 # >> ALL DECLARATION
 # ======================================================================
 
 __all__ = (
-    'burn', 'freeze', 'noclip', 'set_property'
+    'burn', 'freeze', 'noclip', 'jetpack',
+    'push', 'push_to', 'boost_velocity', 'set_property',
+    'player_nearest_vector', 'player_near_vector'
 )
 
 
@@ -25,7 +31,7 @@ __all__ = (
 # >> GLOBALS
 # ======================================================================
 
-_effects = {key: defaultdict(set) for key in __all__ if key != 'set_property'}
+_effects = {key: defaultdict(set) for key in __all__[:4]}
 
 
 # ======================================================================
@@ -106,29 +112,76 @@ def _unnoclip(player, delay):
         player.noclip = False
 
 
-def players_near_coord(vector, radius, player_filter='alive'):
-    """Gets list of players near given vector-coordinate
+def jetpack(player, duration):
+    """Jetpacks a player."""
 
-    Returns a generator of playerentities that are within given radius
-    from given vector (x,y,z). Uses Source.Python's default
-    player filter syntax as optional player_filter setting
+    player.jetpack = True
+    delay = tick_delays.delay(duration, _unjetpack)
+    delay.args = (player, delay)
+    _effects['jetpack'][player.index].add(delay)
+
+
+def _unjetpack(player, delay):
+    """Unjetpacks a player."""
+
+    _effects['jetpack'][player.index].discard(delay)
+    if not _effects['jetpack'][player.index]:
+        player.jetpack = False
+        
+
+def boost_velocity(player, x_mul=1.0, y_mul=1.0, z_mul=1.0):
+    """Boosts player's velocity."""
+
+    base_str = 'CBasePlayer.localdata.m_vecBaseVelocity'
+    new_values = (
+        player.get_property_float('{0}[0]'.format(base_str)) * x_mul,
+        player.get_property_float('{0}[1]'.format(base_str)) * y_mul,
+        player.get_property_float('{0}[2]'.format(base_str)) * z_mul
+    )
+    player.set_property_float(
+        base_str, ','.join(str(value) for value in new_values)
+    )
+
+
+def players_near_vector(vector, radius,
+                        is_filters='alive', not_filters=''):
+    """Yields players near a vector.
+
+    A generator of players that are within given radius
+    from given vector (x,y,z). Takes Source.Python's
+    is_filters and not_filters as optional arguments.
     """
 
-    return (player for player in PlayerInter(player_filter) if vector.get_distance(player.location) <= radius)
+    for userid in PlayerIter(
+            is_filters=is_filters,
+            not_filters=not_filters,
+            return_types='userid'):
+        player = get_player(userid)
+        if player and vector.get_distance(player.location) <= radius:
+            yield player
+            
 
-def player_nearest_coord(vector, max_radius=0, player_filter='alive'):
-    """Gets the player nearest to the given point
+def player_nearest_vector(vector, max_radius=0,
+                          is_filters='alive', not_filters=''):
+    """Gets the player nearest to a vector.
 
-    Returns a playerentity with smallest distance to the
-    given vector (x,y,z) location. Returns None if no 
-    players were found. Max radius limits the search into
-    a given range. Player filter is Source.Python's default
-    method for filtering objects with PlayerIter.
+    Returns a player with smallest distance to the
+    given vector. Returns None if no  players were found.
+    Max radius limits the search into a given range.
+    Takes Source.Python's is_filters
+    and not_filters as optional arguments.
     """
 
-    player_distances = {player:vector.get_distance(player.location) for player in PlayerInter(player_filter)} or {None:0}
-    nearest_player = sorted(player_distances.items(), key=lambda x:x[1])[0]
-    return nearest_player[0] if nearest_player[1] <= max_radius else None
+    closest_distance = max_radius
+    closest_userid = None
+    for player in PlayerIter(is_filters=is_filters, not_filters=not_filters):
+        distance = vector.get_distance(player.location)
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_userid = player.userid
+    if closest_userid:
+        return get_player(closest_userid)
+
 
 def push(player, vector):
     """Pushes player along given vector
@@ -136,7 +189,10 @@ def push(player, vector):
     Pushes player along given vector (x,y,z).
     """
 
-    player.set_property_string('CBasePlayer.localdata.m_vecBaseVelocity', ','.join(vector))
+    player.set_property_string(
+        'CBasePlayer.localdata.m_vecBaseVelocity', ','.join(vector)
+    )
+
 
 def push_to(player, vector, force):
     """Pushes player towards given point
@@ -145,4 +201,4 @@ def push_to(player, vector, force):
     with given force.
     """
 
-    push(player, (vector-player.location)*force)
+    push(player, (vector - player.location) * force)

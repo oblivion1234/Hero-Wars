@@ -64,7 +64,7 @@ class Ignite(Skill):
                 is_filters=('alive', target_team), return_types='userid'):
             target = get_player(userid)
             if target:
-                cmdlib.burn(target, 20 + self.level)
+                cmdlib.burn(target, 2 + self.level)
                 cmdlib.tell(target, 'You were burned!')
         cmdlib.tell(player, 'You burned your enemies!')
 
