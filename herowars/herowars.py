@@ -33,6 +33,30 @@ from filters.players import PlayerIter
 
 from engines.server import engine_server
 
+from cvars.public import PublicConVar
+
+from plugins.info import PluginInfo
+
+
+# =============================================================================
+# >> PLUGIN INFO
+# =============================================================================
+
+info = PluginInfo()
+info.name = 'Hero Wars'
+info.author = 'Mahi, Kamiqawa'
+info.version = '0.3.1'
+info.basename = 'herowars'
+info.variable = "{0}_version".format(info.basename)
+
+# Public variable
+info.convar = PublicConVar(
+    info.variable, 
+    info.version, 
+    0, 
+    "{0} Version".format(info.name)
+)
+
 
 # ======================================================================
 # >> FUNCTIONS
