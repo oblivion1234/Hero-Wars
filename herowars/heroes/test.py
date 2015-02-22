@@ -48,7 +48,7 @@ class Damage(Skill):
     max_level = 1
 
     def on_attack(self, attacker, defender, **eargs):
-        attacker.damage(defender, eargs['damage'])
+        #attacker.damage(defender, eargs['damage'])  # disabled temporarily
         cmdlib.tell(defender, 'You dealt 2x damage!')
 
 

@@ -2,6 +2,9 @@
 # >> IMPORTS
 # ======================================================================
 
+# Python
+from random import randint
+
 # Hero Wars
 from herowars.entities import Item
 
@@ -9,14 +12,21 @@ import herowars.commandlib as cmdlib
 
 
 # ======================================================================
-# >> Longjump Boots
+# >> Exp Boost
 # ======================================================================
 
-class LongjumpBoots(Item):
-    name = 'Longjump Boots'
-    description = 'Grants you longjump'
+class ExpBoost(Item):
+    name = 'Exp Boost'
+    description = 'Grants extra xp on spawn.'
     category = 'Test Items'
     cost = 10
+    limit = 3
 
-    def on_jump(self, player, **eargs):
-        cmdlib.boost_velocity(player, 1.2, 1.2)
+    def on_spawn(self, player, **eargs):
+        amount = randint(1, 15)
+        player.hero.exp += amount
+        cmdlib.tell(
+            player, 
+            'ExpBoost granted you {amount} extra experience.'.format(
+                amount=amount
+            ))

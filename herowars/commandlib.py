@@ -15,7 +15,7 @@ from listeners.tick import tick_delays
 
 from filters.players import PlayerIter
 
-
+from mathlib import Vector
 # ======================================================================
 # >> ALL DECLARATION
 # ======================================================================
@@ -132,14 +132,17 @@ def _unjetpack(player, delay):
 def boost_velocity(player, x_mul=1.0, y_mul=1.0, z_mul=1.0):
     """Boosts player's velocity."""
 
-    base_str = 'CBasePlayer.localdata.m_vecBaseVelocity'
+    return  # Disabled temporarily
+    velocity = player.get_property_vector('localdata.m_vecBaseVelocity')
+
     new_values = (
-        player.get_property_float('{0}[0]'.format(base_str)) * x_mul,
-        player.get_property_float('{0}[1]'.format(base_str)) * y_mul,
-        player.get_property_float('{0}[2]'.format(base_str)) * z_mul
+        float(velocity.x * x_mul),
+        float(velocity.y * y_mul),
+        float(velocity.z * z_mul)
     )
-    player.set_property_float(
-        base_str, ','.join(str(value) for value in new_values)
+    player.set_property_vector(
+        'localdata.m_vecBaseVelocity', 
+        Vector(new_values)
     )
 
 
