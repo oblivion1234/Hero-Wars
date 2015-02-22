@@ -111,9 +111,9 @@ def chance(percentage):
 
     def method_decorator(method):
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, game_event):
+        def method_wrapper(self, **eargs):
             if randint(0, 100) <= percentage:
-                return method(self, game_event)
+                return method(self, **eargs)
             return 1  # Failed to execute
         return method_wrapper
     return method_decorator
@@ -135,9 +135,9 @@ def chancef(fn):
 
     def method_decorator(method):
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, game_event):
-            if randint(0, 100) <= fn(self, game_event):
-                return method(self, game_event)
+        def method_wrapper(self, **eargs):
+            if randint(0, 100) <= fn(self, **eargs):
+                return method(self, **eargs)
             return 2  # Failed to execute
         return method_wrapper
     return method_decorator
@@ -164,10 +164,10 @@ def cooldown(time):
 
     def method_decorator(method):
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, game_event):
+        def method_wrapper(self, **eargs):
             if method_wrapper.cooldown.remaining <= 0:
                 method_wrapper.cooldown.start(1, time)
-                return method(self, game_event)
+                return method(self, **eargs)
             return 3 # Failed to execute
         method_wrapper.cooldown = TickRepeat(_empty)
         return method_wrapper
@@ -190,10 +190,10 @@ def cooldownf(fn):
 
     def method_decorator(method):
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, game_event):
+        def method_wrapper(self, **eargs):
             if method_wrapper.cooldown.remaining <= 0:
-                method_wrapper.cooldown.start(1, fn(self, game_event))
-                return method(self, game_event)
+                method_wrapper.cooldown.start(1, fn(self, **eargs))
+                return method(self, **eargs)
             return 4  # Failed to execute
         method_wrapper.cooldown = TickRepeat(_empty)
         return method_wrapper

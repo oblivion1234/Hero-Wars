@@ -153,6 +153,13 @@ _translations = {
             reset_skill_points = "Reset Skill Points",
             option_buy = "Buy",
             option_change = "Change"
+        ),
+
+        # Other translations
+        'other': dict(
+
+            # Hero's status message
+            hero_status = "{name} - lvl {level} - {exp}/{max_exp} exp"
         )
     }
 }

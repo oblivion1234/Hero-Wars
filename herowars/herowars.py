@@ -14,6 +14,7 @@ from herowars.entities import Hero
 
 from herowars.configs import database_path
 from herowars.configs import exp_values
+from herowars.configs import gold_values
 from herowars.configs import chat_command_prefix
 
 from herowars.translations import get_translation
@@ -117,7 +118,7 @@ def player_disconnect(game_event):
 def player_spawn(game_event):
     """Creates new players and saves existing players' data.
 
-    Also executes spawn skills.
+    Also executes spawn skills and shows current exp/level progress.
     """
 
     # Get the player
@@ -136,9 +137,15 @@ def player_spawn(game_event):
         # Create a new player
         player = create_player(userid)
 
+    # Show current exp and level
+    translation = get_translation(player.lang_key, 'other', 'hero_status')
+    cmdlib.tell(player, translation.format(
+        name=player.hero.name, level=player.hero.level,
+        exp=player.hero.exp, max_exp=player.hero.required_exp))
+
     # Execute spawn skills if the player's on a valid team
-    if game_event.get_int('teamnum') > 1 and player.hero:
-        player.hero.execute_skills('on_spawn', {'player': player})
+    if player.team > 1 and player.hero:
+        player.hero.execute_skills('on_spawn', player=player)
 
 
 @Event
@@ -170,8 +177,8 @@ def player_death(game_event):
         if attacker and attacker.hero and defender.hero:
 
             # Execute kill and death skills
-            attacker.hero.execute_skills('on_kill', eargs)
-            defender.hero.execute_skills('on_death', eargs)
+            attacker.hero.execute_skills('on_kill', **eargs)
+            defender.hero.execute_skills('on_death', **eargs)
 
             # Give attacker exp from kill, headshot and weapon
             give_exp(attacker, 'kill')
@@ -184,11 +191,11 @@ def player_death(game_event):
 
         # If there was no attacker, execute defender's suicide skills
         elif not game_event.get_int('attacker'):
-            defender.hero.execute_skills('on_suicide', eargs)
+            defender.hero.execute_skills('on_suicide', **eargs)
 
         # If assister exists, execute assist skills, give exp and gold
         if assister and assister.hero:
-            assister.hero.execute_skills('on_assist', eargs)
+            assister.hero.execute_skills('on_assist', **eargs)
             give_exp(assister, 'assist')
             give_gold(assister, 'assist')
 
@@ -221,9 +228,9 @@ def player_hurt(game_event):
 
         # Execute attack and defend skills
         if attacker.hero:
-            attacker.hero.execute_skills('on_attack', eargs)
+            attacker.hero.execute_skills('on_attack', **eargs)
         if defender.hero:
-            defender.hero.execute_skills('on_defend', eargs)
+            defender.hero.execute_skills('on_defend', **eargs)
 
 
 @Event
@@ -232,7 +239,7 @@ def player_jump(game_event):
 
     player = get_player(game_event.get_int('userid'))
     if player and player.hero:
-        player.hero.execute_skills('on_jump', {'player': player})
+        player.hero.execute_skills('on_jump', player=player)
 
 
 @Event
@@ -253,7 +260,7 @@ def player_say(game_event):
 
         # If the text was '!ultimate', execute ultimate skills
         if text == 'ultimate' and player.hero:
-            player.hero.execute_skills('on_ultimate', {'player': player})
+            player.hero.execute_skills('on_ultimate', player=player)
 
         # If the text was '!hw' or '!herowars', open main menu
         elif text in ('hw', 'herowars'):

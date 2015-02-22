@@ -240,7 +240,7 @@ class Hero(Entity):
         used_points = sum(skill.level * skill.cost for skill in self.skills)
         return self._level - used_points
 
-    def execute_skills(self, method_name, eargs):
+    def execute_skills(self, method_name, **eargs):
         """Executes hero's skills and passives.
 
         Calls each of hero's skills' and passives' execute() method with
@@ -252,12 +252,12 @@ class Hero(Entity):
         """
 
         for passive in self.passives:
-            passive.execute_method(method_name, eargs)
+            passive.execute_method(method_name, **eargs)
         for skill in self.skills:
             if skill.level:
-                skill.execute_method(method_name, eargs)
+                skill.execute_method(method_name, **eargs)
         for item in self.items:
-            item.execute_method(method_name, eargs)
+            item.execute_method(method_name, **eargs)
 
     @classmethod
     def skill(cls, skill_class):
@@ -311,7 +311,7 @@ class Skill(Entity):
     cost = 1
     max_level = 8
 
-    def execute_method(self, method_name, eargs):
+    def execute_method(self, method_name, **eargs):
         """Executes skill's method.
 
         Executes the skill's method with matching name to the
@@ -324,7 +324,7 @@ class Skill(Entity):
 
         method = getattr(self.__class__, method_name, None)
         if method:
-            method(self, eargs)
+            method(self, **eargs)
 
 
 class Item(Skill):
