@@ -10,6 +10,7 @@ from messages import SayText2
 
 from listeners.tick import tick_delays
 
+from filters.players import PlayerIter
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -103,3 +104,45 @@ def _unnoclip(player, delay):
     _effects['noclip'][player.index].discard(delay)
     if not _effects['noclip'][player.index]:
         player.noclip = False
+
+
+def players_near_coord(vector, radius, player_filter='alive'):
+    """Gets list of players near given vector-coordinate
+
+    Returns a generator of playerentities that are within given radius
+    from given vector (x,y,z). Uses Source.Python's default
+    player filter syntax as optional player_filter setting
+    """
+
+    return (player for player in PlayerInter(player_filter) if vector.get_distance(player.location) <= radius)
+
+def player_nearest_coord(vector, max_radius=0, player_filter='alive'):
+    """Gets the player nearest to the given point
+
+    Returns a playerentity with smallest distance to the
+    given vector (x,y,z) location. Returns None if no 
+    players were found. Max radius limits the search into
+    a given range. Player filter is Source.Python's default
+    method for filtering objects with PlayerIter.
+    """
+
+    player_distances = {player:vector.get_distance(player.location) for player in PlayerInter(player_filter)} or {None:0}
+    nearest_player = sorted(player_distances.items(), key=lambda x:x[1])[0]
+    return nearest_player[0] if nearest_player[1] <= max_radius else None
+
+def push(player, vector):
+    """Pushes player along given vector
+
+    Pushes player along given vector (x,y,z).
+    """
+
+    player.set_property_string('CBasePlayer.localdata.m_vecBaseVelocity', ','.join(vector))
+
+def push_to(player, vector, force):
+    """Pushes player towards given point
+
+    Pushes player towards given vector point (x,y,z)
+    with given force.
+    """
+
+    push(player, (vector-player.location)*force)
