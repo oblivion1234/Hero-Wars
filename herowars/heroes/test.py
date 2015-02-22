@@ -27,30 +27,21 @@ class TestHero1(Hero):
 
 
 @TestHero1.passive
-class Health(Skill):
-    name = 'Health Passive'
-    description = 'Gain health on spawn and attack.'
+class HealthSpeed(Skill):
+    name = 'Speed&Health Passive'
+    description = 'Gain speed on spawn and health on attack.'
 
-    def on_spawn(self, player, **eargs):
-        player.health += 15
-        cmdlib.tell(player, '+15 health from Health Passive.')
+    def on_spawn(self, eargs):
+        player = eargs['player']
+        player.set_property_float('m_flLaggedMovementValue', 1.2)
+        cmdlib.tell(player, '+20% speed from Passive.')
 
     @chance(33)
-    def on_attack(self, attacker, **eargs):
-        attacker.health += 5
-        cmdlib.tell(attacker, '+5 health from Health Passive.')
+    def on_attack(self, eargs):
+        eargs['attacker'].health += 5
+        cmdlib.tell(eargs['attacker'], '+5 health from Passive.')
 
-
-@TestHero1.skill
-class Enrage(Skill):
-    name = 'Enrage'
-    description = 'Bonus speed after taking damage.'
-    max_level = 3
-
-    def on_defend(self, defender, **eargs):
-        cmdlib.shiftprop(defender, 'speed', 0.3 * self.level, duration=1)
-
-
+        
 @TestHero1.skill
 class Damage(Skill):
     name = 'Damage'
