@@ -10,6 +10,8 @@ from functools import wraps, WRAPPER_ASSIGNMENTS
 # Source.Python
 from listeners.tick.repeat import TickRepeat
 
+from messages import SayText2
+
 
 # ======================================================================
 # >> CLASSES
@@ -109,14 +111,7 @@ def chance(percentage):
         New function that doesn't always get executed when called
     """
 
-    def method_decorator(method):
-        @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, **eargs):
-            if randint(0, 100) <= percentage:
-                return method(self, **eargs)
-            return 1  # Failed to execute
-        return method_wrapper
-    return method_decorator
+    return chancef(lambda: percentage)
 
 
 def chancef(fn):
@@ -133,23 +128,30 @@ def chancef(fn):
         New function that doesn't always get executed when called
     """
 
+    # Create a decorator using the function provided
     def method_decorator(method):
+
+        # Create a wrapper method
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
         def method_wrapper(self, **eargs):
+
+            # If the randomization passes
             if randint(0, 100) <= fn(self, **eargs):
+
+                # Call the method
                 return method(self, **eargs)
-            return 2  # Failed to execute
+
+            # Else exit with code 2
+            return 2
+
+        # Return the wrapper
         return method_wrapper
+
+    # Return the decorator
     return method_decorator
 
 
-def _empty(*args, **kwargs):
-    """Empty function, does nothing."""
-
-    pass
-
-
-def cooldown(time):
+def cooldown(time, message=None):
     """Decorates a function to have a static cooldown.
 
     Decorator function for easily adding cooldown as
@@ -157,24 +159,16 @@ def cooldown(time):
 
     Args:
         time: Cooldown of the method
+        message: Optional message sent if there's still cooldown left
 
     Returns:
         Decorated method with a static cooldown
     """
 
-    def method_decorator(method):
-        @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
-        def method_wrapper(self, **eargs):
-            if method_wrapper.cooldown.remaining <= 0:
-                method_wrapper.cooldown.start(1, time)
-                return method(self, **eargs)
-            return 3 # Failed to execute
-        method_wrapper.cooldown = TickRepeat(_empty)
-        return method_wrapper
-    return method_decorator
+    return cooldownf(lambda self, **eargs: time, message)
 
 
-def cooldownf(fn):
+def cooldownf(fn, message=None):
     """Decorates a method to have a dynamic cooldown.
 
     Decorator function for easily adding cooldown as a dynamic time
@@ -183,18 +177,49 @@ def cooldownf(fn):
 
     Args:   
         fn: Function to determine the cooldown of the method
+        message: Optional message sent if there's still cooldown left
     
     Returns:
         Decorated method with a dynamic cooldown
     """
 
+    # Create a decorator using the function and message provided
     def method_decorator(method):
+
+        # Create a wrapper method
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
         def method_wrapper(self, **eargs):
+            
+            # If the method's cooldown is over
             if method_wrapper.cooldown.remaining <= 0:
+
+                # Restart the cooldown
                 method_wrapper.cooldown.start(1, fn(self, **eargs))
+
+                # And call the function
                 return method(self, **eargs)
-            return 4  # Failed to execute
-        method_wrapper.cooldown = TickRepeat(_empty)
+
+            # If there was cooldown remaining and a message is provided
+            if message:
+
+                # Format the provided message
+                message = message.format(
+                    name=self.name,
+                    cd=method_wrapper.cooldown.remaining,
+                    max_cd=method_wrapper.cooldown.limit)
+                )
+
+                # Send it to the player
+                SayText2(message=message).send(eargs['player'].index)
+
+                # And exit with code 3
+                return 3
+
+        # Create the cooldown object for the wrapper
+        method_wrapper.cooldown = TickRepeat(lambda: None)
+
+        # And return the wrapper
         return method_wrapper
+
+    # Return the decorator
     return method_decorator

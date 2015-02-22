@@ -117,7 +117,7 @@ _translations = {
             not_enough_cash = "You don't have enough cash (${cash}/${cost}).",
 
             bought_item = "You bought item '{name}' for ${cost}.",
-            sold_item = "You bought item '{name}' for ${cost}.",
+            sold_item = "You sold item '{name}' for ${cost}.",
 
             # Hero values
             no_heroes_to_buy = "There are no heroes to buy.",

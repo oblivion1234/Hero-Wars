@@ -45,7 +45,7 @@ from plugins.info import PluginInfo
 info = PluginInfo()
 info.name = 'Hero Wars'
 info.author = 'Mahi, Kamiqawa'
-info.version = '0.3.1'
+info.version = '0.3.2'
 info.basename = 'herowars'
 info.variable = "{0}_version".format(info.basename)
 
@@ -201,8 +201,8 @@ def player_death(game_event):
         if attacker and attacker.hero and defender.hero:
 
             # Execute kill and death skills
-            attacker.hero.execute_skills('on_kill', **eargs)
-            defender.hero.execute_skills('on_death', **eargs)
+            attacker.hero.execute_skills('on_kill', player=attacker, **eargs)
+            defender.hero.execute_skills('on_death', player=defender, **eargs)
 
             # Give attacker exp from kill, headshot and weapon
             give_exp(attacker, 'kill')
@@ -215,11 +215,12 @@ def player_death(game_event):
 
         # If there was no attacker, execute defender's suicide skills
         elif not game_event.get_int('attacker'):
-            defender.hero.execute_skills('on_suicide', **eargs)
+            defender.hero.execute_skills(
+                'on_suicide', player=defender, **eargs)
 
         # If assister exists, execute assist skills, give exp and gold
         if assister and assister.hero:
-            assister.hero.execute_skills('on_assist', **eargs)
+            assister.hero.execute_skills('on_assist', player=assister, **eargs)
             give_exp(assister, 'assist')
             give_gold(assister, 'assist')
 
@@ -252,9 +253,9 @@ def player_hurt(game_event):
 
         # Execute attack and defend skills
         if attacker.hero:
-            attacker.hero.execute_skills('on_attack', **eargs)
+            attacker.hero.execute_skills('on_attack', player=attacker, **eargs)
         if defender.hero:
-            defender.hero.execute_skills('on_defend', **eargs)
+            defender.hero.execute_skills('on_defend', player=defender, **eargs)
 
 
 @Event

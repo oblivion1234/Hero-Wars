@@ -384,8 +384,6 @@ def _buy_items_menu_callback(menu, ply_index, choice):
     buy_items_menu(ply_index, chosen_category).send(ply_index)
 
 
-
-
 # ======================================================================
 # >> OWNED HEROES -MENU
 # ======================================================================
@@ -708,33 +706,31 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
     skill = choice.value
-    if hero.skill_points < skill.cost:
-        # TODO: Improve 6 add translations
-        cmdlib.tell(player, 'Not enough skill points ({cur}/{req})'.format(
-            cur=hero.skill_points,
-            req=skill.cost
-        ))
-        # Refresh
-        menu.close()
-        current_hero_info_menu(ply_index).send(ply_index)
-        return
-    elif hero.level < skill.required_level:
-        # TODO: Improve 6 add translations
+
+    # TODO: Improve 6 add translations
+    if hero.level < skill.required_level:
         cmdlib.tell(player, 'Required level not reached ({cur}/{req})'.format(
             cur=hero.level,
             req=skill.required_level
         ))
-        # Refresh
-        menu.close()
-        current_hero_info_menu(ply_index).send(ply_index)
-        return
-    skill.level += 1
-    translation = get_translation(
-        player.lang_key, 'menu_messages', 'skill_leveled')
-    cmdlib.tell(player, translation.format(
-        name=skill.name, 
-        level=skill.level
-    ))
+    elif skill.level >= skill.max_level:
+        cmdlib.tell(player, 'Skill already maxed out ({cur}/{max}'.format(
+            cur=skill.level,
+            max=skill.max_level
+        ))
+    elif hero.skill_points < skill.cost:
+        cmdlib.tell(player, 'Not enough skill points ({cur}/{req})'.format(
+            cur=hero.skill_points,
+            req=skill.cost
+        ))
+    else:  # Everything went good
+        skill.level += 1
+        translation = get_translation(
+            player.lang_key, 'menu_messages', 'skill_leveled')
+        cmdlib.tell(player, translation.format(
+            name=skill.name, 
+            level=skill.level
+        ))
 
     # Refresh
     menu.close()

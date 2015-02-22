@@ -26,7 +26,7 @@ from players.helpers import index_from_userid
 # >> ALL DECLARATION
 # ======================================================================
 
-__all___ = (
+__all__ = (
     'player',
     'get_player',
     'create_player',
