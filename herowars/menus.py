@@ -285,7 +285,6 @@ def item_categories_menu(ply_index):
         menu.append(Option(category, category))
 
     if not menu:
-        print(menu)
         cmdlib.tell(player, get_translation(
             player.lang_key, 'menu_messages', 'no_items_to_buy'))
         menu = menu.option8.value(ply_index)  # Refresh
@@ -695,9 +694,9 @@ def _reset_skill_points(menu, ply_index, choice):
     for skill in hero.skills:
         skill.level = 0
 
-        # Refresh
-        menu.close()
-        current_hero_info_menu(ply_index).send(ply_index)
+    # Refresh
+    menu.close()
+    current_hero_info_menu(ply_index).send(ply_index)
 
 
 def _current_hero_info_menu_callback(menu, ply_index, choice):
@@ -709,14 +708,33 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
     skill = choice.value
-    if hero.skill_points > skill.cost:
-        skill.level += 1
-        translation = get_translation(
-            player.lang_key, 'menu_messages', 'skill_leveled')
-        cmdlib.tell(player, translation.format(
-            name=skill.name, 
-            level=skill.level
+    if hero.skill_points < skill.cost:
+        # TODO: Improve 6 add translations
+        cmdlib.tell(player, 'Not enough skill points ({cur}/{req})'.format(
+            cur=hero.skill_points,
+            req=skill.cost
         ))
+        # Refresh
+        menu.close()
+        current_hero_info_menu(ply_index).send(ply_index)
+        return
+    elif hero.level < skill.required_level:
+        # TODO: Improve 6 add translations
+        cmdlib.tell(player, 'Required level not reached ({cur}/{req})'.format(
+            cur=hero.level,
+            req=skill.required_level
+        ))
+        # Refresh
+        menu.close()
+        current_hero_info_menu(ply_index).send(ply_index)
+        return
+    skill.level += 1
+    translation = get_translation(
+        player.lang_key, 'menu_messages', 'skill_leveled')
+    cmdlib.tell(player, translation.format(
+        name=skill.name, 
+        level=skill.level
+    ))
 
     # Refresh
     menu.close()
