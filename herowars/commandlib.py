@@ -8,6 +8,8 @@ from collections import defaultdict
 # Source.Python
 from messages import SayText2
 
+from listeners.tick import tick_delays
+
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -47,14 +49,15 @@ def shiftprop(player, prop, shift, duration=0):
 
     setattr(player, prop, getattr(player, prop) + shift)
     if duration:
-        Delay(duration, shiftprop, player, prop, -shift)()
+        tick_delays.delay(duration, shiftprop, player, prop, -shift)()
 
 
 def burn(player, duration):
     """Sets a player on fire."""
 
     player.call_input('Ignite')
-    delay, delay.args = Delay(duration, _unburn), (player, delay)
+    delay = tick_delays.delay(duration, _unburn)
+    delay.args = (player, delay)
     _effects['burn'][player.index].add(delay)
     delay()
 
@@ -71,7 +74,8 @@ def freeze(player, duration):
     """Freezes a player."""
 
     player.freeze = True
-    delay, delay.args = Delay(duration, _unfreeze), (player, delay)
+    delay = tick_delays.delay(duration, _unfreeze)
+    delay.args = (player, delay)
     _effects['freeze'][player.index].add(delay)
     delay()
 
@@ -88,9 +92,9 @@ def noclip(player, duration):
     """Noclips a player."""
 
     player.noclip = True
-    delay, delay.args = Delay(duration, _unnoclip), (player, delay)
+    delay = tick_delays.delay(duration, _unnoclip)
+    delay.args = (player, delay)
     _effects['noclip'][player.index].add(delay)
-    delay()
 
 
 def _unnoclip(player, delay):
