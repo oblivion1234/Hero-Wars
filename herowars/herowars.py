@@ -51,6 +51,20 @@ def load():
     engine_server.server_command('mp_restartgame 3\n')
 
 
+def give_gold(player, gold_key):
+    """Gives player gold.
+
+    Args:
+        player: Player who to give gold to
+        gold_key: Key used for finding the gold value
+    """
+
+    if player:
+        gold = gold_values.get(gold_key, 0)
+        if gold > 0:
+            player.gold += gold
+
+
 def give_exp(player, exp_key):
     """Gives player exp and sends him a message about it.
 
@@ -161,14 +175,18 @@ def player_death(game_event):
                 give_exp(attacker, 'headshot')
             give_exp(attacker, eargs['weapon'])
 
+            # Give attacker gold from kill
+            give_gold(attacker, 'kill')
+
         # If there was no attacker, execute defender's suicide skills
         elif not game_event.get_int('attacker'):
             defender.hero.execute_skills('on_suicide', eargs)
 
-        # If assister exists, execute assist skills and give exp
+        # If assister exists, execute assist skills, give exp and gold
         if assister and assister.hero:
             assister.hero.execute_skills('on_assist', eargs)
             give_exp(assister, 'assist')
+            give_gold(assister, 'assist')
 
         # Finally, remove items that are not "permanent"
         if defender.hero:
@@ -251,13 +269,15 @@ def round_end(game_event):
         # Get the player
         player = get_player(userid)
 
-        # Give player win exp
+        # Give player win exp and gold
         if player.get_team() == winner:
             give_exp(player, 'round_win')
+            give_gold(player, 'round_win')
 
-        # Or loss exp
+        # Or loss exp and gold
         else:
             give_exp(player, 'round_loss')
+            give_gold(player, 'round_loss')
 
 
 @Event

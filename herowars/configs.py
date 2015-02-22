@@ -51,9 +51,24 @@ exp_values = dict(
 )
 
 
+# Amounts of gold gained from objectives
+gold_values = dict(
+
+    # Kill values
+    kill = 2,
+    assist = 1,
+
+    # Round values
+    round_win = 3,
+    round_lose = 2
+)
+
+
 # Starting heroes for when a player joins the server for the first time
 # > Use class names for identifying the Hero classes
-starting_heroes = tuple()
+starting_heroes = (
+    'TestHero1',
+)
 
 
 # Hero category used when the category is not defined

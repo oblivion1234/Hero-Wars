@@ -21,8 +21,6 @@ from players.entity import PlayerEntity
 
 from players.helpers import index_from_userid
 
-from messages import SayText2
-
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -211,12 +209,3 @@ class _Player(PlayerEntity):
         # Save his current hero and change to the new one
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
-
-    def signal(self, message):
-        """Sends a message to a player using SayText2.
-
-        Args:
-            message: Text to display to the player
-        """
-
-        SayText2(message=message).send(self.index)

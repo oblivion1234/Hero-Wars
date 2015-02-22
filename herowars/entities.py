@@ -55,7 +55,7 @@ class Entity(object):
     # Defaults
     name = 'Unnamed Entity'
     description = 'This is an entity.'
-    author = 'Unknown'
+    authors = 'Unknown'
     cost = 0
     max_level = -1  # Negative value for unlimited
     enabled = True
