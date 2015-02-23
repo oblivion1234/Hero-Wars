@@ -111,7 +111,7 @@ def chance(percentage):
         New function that doesn't always get executed when called
     """
 
-    return chancef(lambda: percentage)
+    return chancef(lambda self, **eargs: percentage)
 
 
 def chancef(fn):
@@ -206,7 +206,7 @@ def cooldownf(fn, message=None):
                 message = message.format(
                     name=self.name,
                     cd=method_wrapper.cooldown.remaining,
-                    max_cd=method_wrapper.cooldown.limit)
+                    max_cd=method_wrapper.cooldown.limit
                 )
 
                 # Send it to the player

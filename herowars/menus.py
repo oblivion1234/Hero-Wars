@@ -714,7 +714,7 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
             req=skill.required_level
         ))
     elif skill.level >= skill.max_level:
-        cmdlib.tell(player, 'Skill already maxed out ({cur}/{max}'.format(
+        cmdlib.tell(player, 'Skill already maxed out ({cur}/{max})'.format(
             cur=skill.level,
             max=skill.max_level
         ))

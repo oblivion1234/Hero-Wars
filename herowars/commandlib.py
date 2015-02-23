@@ -16,6 +16,8 @@ from listeners.tick import tick_delays
 from filters.players import PlayerIter
 
 from mathlib import Vector
+
+
 # ======================================================================
 # >> ALL DECLARATION
 # ======================================================================
@@ -132,58 +134,38 @@ def _unjetpack(player, delay):
 def boost_velocity(player, x_mul=1.0, y_mul=1.0, z_mul=1.0):
     """Boosts player's velocity."""
 
-    return  # Disabled temporarily
-    velocity = player.get_property_vector('localdata.m_vecBaseVelocity')
-
-    new_values = (
-        float(velocity.x * x_mul),
-        float(velocity.y * y_mul),
-        float(velocity.z * z_mul)
-    )
-    player.set_property_vector(
-        'localdata.m_vecBaseVelocity', 
-        Vector(new_values)
-    )
+    base_string = 'CBasePlayer.localdata.m_vecBaseVelocity'
+    velocity = player.get_property_vector(base_string)
+    velocity.x *= x_mul
+    velocity.y *= y_mul
+    velocity.z *= z_mul
+    player.set_property_vector(base_string, vector)
 
 
-def players_near_vector(vector, radius,
-                        is_filters='alive', not_filters=''):
-    """Yields players near a vector.
+def get_nearby_players(point, radius, is_filters='alive', not_filters=''):
+    """Gets players near a point sorted by their distance to the point.
 
-    A generator of players that are within given radius
-    from given vector (x,y,z). Takes Source.Python's
-    is_filters and not_filters as optional arguments.
+    Args:
+        point: (x, y, z) coordinates of a 3D point
+        radius: Radius to look for the players
+        is_filters: PlayerIter's is_filters
+        not_filters: PlayerIter's not_filters
+
+    Returns:
+        A list of players within the given radius from the given point,
+        sorted by their distance of the point.
     """
 
+    vector = Vector(point)
+    players = set()
     for userid in PlayerIter(
             is_filters=is_filters,
             not_filters=not_filters,
             return_types='userid'):
         player = get_player(userid)
         if player and vector.get_distance(player.location) <= radius:
-            yield player
-            
-
-def player_nearest_vector(vector, max_radius=0,
-                          is_filters='alive', not_filters=''):
-    """Gets the player nearest to a vector.
-
-    Returns a player with smallest distance to the
-    given vector. Returns None if no  players were found.
-    Max radius limits the search into a given range.
-    Takes Source.Python's is_filters
-    and not_filters as optional arguments.
-    """
-
-    closest_distance = max_radius
-    closest_userid = None
-    for player in PlayerIter(is_filters=is_filters, not_filters=not_filters):
-        distance = vector.get_distance(player.location)
-        if distance < closest_distance:
-            closest_distance = distance
-            closest_userid = player.userid
-    if closest_userid:
-        return get_player(closest_userid)
+            players.add(player)
+    return sorted(players, key=lambda p: vector.get_distance(p.location))
 
 
 def push(player, vector):

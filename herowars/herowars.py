@@ -38,9 +38,9 @@ from cvars.public import PublicConVar
 from plugins.info import PluginInfo
 
 
-# =============================================================================
+# ======================================================================
 # >> PLUGIN INFO
-# =============================================================================
+# ======================================================================
 
 info = PluginInfo()
 info.name = 'Hero Wars'
@@ -281,15 +281,19 @@ def player_say(game_event):
             return
 
         # Get the ACTUAL text without the prefix
-        text = text[len(chat_command_prefix):]
+        text2 = text[len(chat_command_prefix):]
 
         # If the text was '!ultimate', execute ultimate skills
-        if text == 'ultimate' and player.hero:
+        if text2 == 'ultimate' and player.hero:
             player.hero.execute_skills('on_ultimate', player=player)
 
         # If the text was '!hw' or '!herowars', open main menu
-        elif text in ('hw', 'herowars'):
+        elif text2 in ('hw', 'herowars'):
             main_menu(player.index).send(player.index)
+
+        # Finally, execute hero's on_say skills
+        if player.hero:
+            player.hero.execute_skills('on_say', player=player, text=text)
         
 
 @Event

@@ -59,7 +59,6 @@ class Entity(object):
     cost = 0
     max_level = -1  # Negative value for unlimited
     enabled = True
-    required_level = 0
     allowed_users = tuple()
 
     @classproperty
@@ -152,8 +151,7 @@ class Hero(Entity):
     description = 'This is a hero.'
     skill_set = tuple()
     passive_set = tuple()
-    cost = 100
-    max_level = 70
+    cost = 20
     category = default_hero_category
 
     def __init__(self, level=0, exp=0):
@@ -310,6 +308,7 @@ class Skill(Entity):
     description = 'This is a skill.'
     cost = 1
     max_level = 8
+    required_level = 0
 
     def execute_method(self, method_name, **eargs):
         """Executes skill's method.

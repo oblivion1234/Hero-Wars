@@ -45,20 +45,21 @@ players = []
 # >> FUNCTIONS
 # ======================================================================
 
-def get_player(userid):
-    """Gets a player with matching userid.
+def get_player(value, key='userid'):
+    """Gets a player with matching key.
 
     Loops through the players list and returns a player with matching
-    userid to the provided parameter value.
+    key to the provided parameter value.
 
     Args:
-        userid: Userid of the player to find
+        value: Value of the player's key to look for
+        key: Key to compare the value to
 
     Returns:
-        Player with matching userid
+        Player with matching key or None
     """
 
-    return find_element(players, 'userid', userid)
+    return find_element(players, key, value)
 
 
 def create_player(userid):
@@ -209,3 +210,15 @@ class _Player(PlayerEntity):
         # Save his current hero and change to the new one
         save_hero_data(database_path, self.steamid, self.hero)
         self._hero = hero
+
+    @property
+    def cs_team(self):
+        """Returns player's Counter-Strike team."""
+
+        return ['un', 'spec', 't', 'ct'][self.team]
+
+    @cs_team.setter
+    def cs_team(self, value):
+        """Sets player's Counter-Strike team."""
+
+        self.team = ['un', 'spec', 't', 'ct'].index(value)
