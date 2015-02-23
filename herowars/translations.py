@@ -128,8 +128,14 @@ _translations = {
             changed_hero = "You changed your hero to '{name}'.",
 
             # Skill values
-            skill_leveled = "Skill '{name}' is now level {level}.",
-            skill_points_reset = "Skill points have been reset."
+            skill_leveled = "Skill '{name}' is now on level {level}.",
+            skill_points_reset = "Skill points have been reset.",
+
+            not_required_level = ("Hero hasn't reached required level "
+                                  "({current_level}/{required_level})."),
+            not_enough_skill_points = ("You don't have enough skill points "
+                                       "({skill_points}/{cost})."),
+            skill_maxed_out = "Skill has already been maxed out."
             
         ),
 

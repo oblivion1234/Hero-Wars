@@ -30,7 +30,6 @@ from menus.base import _translate_text
 from players.helpers import userid_from_index
 
 
-
 # ======================================================================
 # >> CLASSES
 # ======================================================================
@@ -515,11 +514,21 @@ def hero_info_menu(ply_index, hero_cls=None):
 
     # Add all hero's skills and descriptions to the menu
     for skill in hero_cls.skill_set:
-        menu.append(Option('{skill_name}\n{skill_description}'.format(
-            skill_name=skill.name, 
-            skill_description=skill.description
+        menu.append(Option('{name}\n{description}'.format(
+            name=skill.name, 
+            description=skill.description
             ),
             None  # No value needed for now
+        ))
+
+    # Add all hero's passive skills and descriptions to the menu
+    for passive in hero_cls.passive_set:
+        menu.append(Option('{name} (passive)\n{description}'.format(
+            name=passive.name,
+            description=passive.description
+            ), 
+            None,  # No value needed for now
+            hightlight=False
         ))
     
     return menu
@@ -599,12 +608,24 @@ def owned_hero_info_menu(ply_index, hero=None):
 
     # Add all the hero's skills, their levels and descriptions to the menu
     for skill in hero.skills:
-        menu.append(Option('{name} {level}{max}\n{description}'.format(
+        menu.append(Option('{name} {level}{max}{required}\n{description}'.format(
             name=skill.name,
             level=skill.level,
+            required=(' (req {0})'.format(skill.required_level)
+                if skill.required_level > 0 else ''),
             max=(('/'+str(skill.max_level)) if skill.max_level > 0 else ''),
             description=skill.description
-            ), None  # No value needed for now
+            ), 
+            None  # No value needed for now
+        ))
+
+    for passive in hero.passives:
+        menu.append(Option('{name} (passive)\n{description}'.format(
+            name=passive.name,
+            description=passive.description
+            ), 
+            None,  # No value needed for now))
+            highlight=False
         ))
     
     return menu
@@ -668,13 +689,17 @@ def current_hero_info_menu(ply_index):
 
     # Add all hero's skills and their levels to the menu
     for skill in hero.skills:
-        menu.append(Option('{name} {level}{max_level}'.format(
+        menu.append(Option('{name} {level}{max_level}{required}'.format(
             name=skill.name,
             level=skill.level,
             max_level=('/'+str(skill.max_level)) 
-                if skill.max_level > 0 else ''),
-            skill, 
-            highlight=False if skill.max_level == 0 else True
+                if skill.max_level > 0 else '',
+            required=(' (req {0})'.format(skill.required_level)
+                if skill.required_level > 0 else ''),
+            highlight=False if skill.max_level == 0 or
+                skill.level >= skill.max_level else True
+            ),
+            skill,
         ))
     
     return menu
@@ -701,7 +726,7 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
     """Current Hero Info menu's callback.
 
     If there are available skill points, level up the 
-    selected skill and refresh the menu. Else close the menu.
+    selected skill and refresh the menu.
     """
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
@@ -709,19 +734,21 @@ def _current_hero_info_menu_callback(menu, ply_index, choice):
 
     # TODO: Improve 6 add translations
     if hero.level < skill.required_level:
-        cmdlib.tell(player, 'Required level not reached ({cur}/{req})'.format(
-            cur=hero.level,
-            req=skill.required_level
+        translation = get_translation(
+            player.lang_key, 'menu_messages', 'not_required_level')
+        cmdlib.tell(player, translation.format(
+            current_level=hero.level,
+            required_level=skill.required_level
         ))
     elif skill.level >= skill.max_level:
-        cmdlib.tell(player, 'Skill already maxed out ({cur}/{max})'.format(
-            cur=skill.level,
-            max=skill.max_level
-        ))
+        cmdlib.tell(player, get_translation(
+            player.lang_key, 'menu_messages', 'skill_maxed_out'))
     elif hero.skill_points < skill.cost:
-        cmdlib.tell(player, 'Not enough skill points ({cur}/{req})'.format(
-            cur=hero.skill_points,
-            req=skill.cost
+        translation = get_translation(
+            player.lang_key, 'menu_messages', 'not_enough_skill_points')
+        cmdlib.tell(player, translation.format(
+            skill_points=hero.skill_points,
+            cost=skill.cost
         ))
     else:  # Everything went good
         skill.level += 1
