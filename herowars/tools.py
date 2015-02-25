@@ -30,6 +30,28 @@ class classproperty(object):
         return self.getter(owner)
 
 
+class Event(set):
+    """Event class for simple events such as leveling up."""
+
+    def __iadd__(self, listener):
+        """Add a listener using += operator."""
+
+        self.add(listener)
+        return self
+
+    def __isub__(self, listener):
+        """Remove a listener using -= operator."""
+
+        self.remove(listener)
+        return self
+
+    def fire(self, sender, *args, **kwargs):
+        """Fire the event calling all of its listeners."""
+        
+        for listener in self:
+            listener(sender, *args, **kwargs)
+
+
 # ======================================================================
 # >> FUNCTIONS
 # ======================================================================

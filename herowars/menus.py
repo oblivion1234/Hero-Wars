@@ -50,7 +50,7 @@ class HwPagedMenu(PagedMenu):
     def __init__(
             self, data=None, select_callback=None,
             build_callback=None, description=None,
-            title=None, top_seperator='-' * 30, bottom_seperator='-' * 30):
+            title=None, top_seperator=None, bottom_seperator=None):
         super().__init__(
             data, select_callback, build_callback, description, title,
             top_seperator, bottom_seperator
@@ -166,16 +166,12 @@ def main_menu(ply_index):
     menu.select_callback = _main_menu_callback
     menu.extend([
         Text('Hero Wars'),
-        Text('-'*20),
+        Text('Gold: {gold}'.format(gold=player.gold)),
         Option(get_translation(player.lang_key, 'menus', 'buy_heroes'), 1),
         Option(get_translation(player.lang_key, 'menus', 'owned_heroes'), 2),
         Option(get_translation(player.lang_key, 'menus', 'current_hero'), 3),
-        Text('-'*20),
         Option(get_translation(player.lang_key, 'menus', 'buy_items'), 4),
         Option(get_translation(player.lang_key, 'menus', 'sell_items'), 5),
-        Text('-'*20),
-        Text('Gold: {gold}'.format(gold=player.gold)),
-        Text('-'*20),
         Text('0. Close')
     ])
     return menu
@@ -403,12 +399,15 @@ def owned_heroes_menu(ply_index):
 
     # Add all player's heroes to the menu
     for hero in player.heroes:
-        menu.append(Option('{name} ({current_level}{max_level})'.format(
-            name=hero.name, 
-            current_level=hero.level,
-            max_level=('/'+str(hero.max_level)) if hero.max_level > 0 else ''), 
-            hero
-        ))
+        menu.append(
+            Option('{name} ({current_level}/{max_level})'.format(
+                    name=hero.name, 
+                    current_level=hero.level,
+                    max_level=hero.max_level
+                ), 
+                hero
+            )
+        )
 
     if not menu:
         cmdlib.tell(player, get_translation(
@@ -500,10 +499,10 @@ def hero_info_menu(ply_index, hero_cls=None):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(select_callback=_hero_info_menu_callback)
-    menu.title = '{name}\n{description}\n{seperator}\nPrice: {price}\n'.format(
+    menu.title = '{name}\n{description}\n{seperator}Price: {price}\n'.format(
         name=hero_cls.name, 
         description=hero_cls.description,
-        seperator=menu.top_seperator,
+        seperator=menu.top_seperator + '\n' if menu.top_seperator else '',
         price=hero_cls.cost
     )
     menu.page_info = False
@@ -594,10 +593,10 @@ def owned_hero_info_menu(ply_index, hero=None):
 
     player = get_player(userid_from_index(ply_index))
     menu = HwPagedMenu(select_callback=_owned_hero_info_menu_callback)
-    menu.title = '{name}\n{description}\n{seperator}\nLevel: {level}\n'.format(
+    menu.title = '{name}\n{description}\n{seperator}Level: {level}\n'.format(
         name=hero.name, 
         description=hero.description,
-        seperator=menu.top_seperator,
+        seperator=menu.top_seperator + '\n' if menu.top_seperator else '',
         level=hero.level
     )
     menu.page_info = False
@@ -608,13 +607,14 @@ def owned_hero_info_menu(ply_index, hero=None):
 
     # Add all the hero's skills, their levels and descriptions to the menu
     for skill in hero.skills:
-        menu.append(Option('{name} {level}{max}{required}\n{description}'.format(
-            name=skill.name,
-            level=skill.level,
-            required=(' (req {0})'.format(skill.required_level)
-                if skill.required_level > 0 else ''),
-            max=(('/'+str(skill.max_level)) if skill.max_level > 0 else ''),
-            description=skill.description
+        menu.append(
+            Option('{name} {level}/{max}{required}\n{description}'.format(
+                name=skill.name,
+                level=skill.level,
+                required=(' (req {0})'.format(skill.required_level)
+                    if skill.required_level > 0 else ''),
+                max=skill.max_level,
+                description=skill.description
             ), 
             None  # No value needed for now
         ))
@@ -670,9 +670,9 @@ def current_hero_info_menu(ply_index):
     player = get_player(userid_from_index(ply_index))
     hero = player.hero
     menu = HwPagedMenu(select_callback=_current_hero_info_menu_callback)
-    menu.title = '{name}\n{seperator}\nLevel: {level}\n'.format(
+    menu.title = '{name}\n{seperator}Level: {level}\n'.format(
         name=hero.name, 
-        seperator=menu.top_seperator,
+        seperator=menu.top_seperator + '\n' if menu.top_seperator else '',
         level=hero.level
     )
     menu.page_info = False
@@ -684,16 +684,18 @@ def current_hero_info_menu(ply_index):
     # Override the bottom seperator to display available skill points
     translation = get_translation(
         player.lang_key, 'menus', 'available_skill_points')
-    menu.bottom_seperator = '-'*30+'\n'+translation.format(
-        skill_points=hero.skill_points)+'\n'+'-'*30
+    menu.bottom_seperator = (
+        menu.bottom_seperator + '\n' +
+        translation.format(skill_points=hero.skill_points)
+        + '\n' + menu.bottom_seperator
+    )
 
     # Add all hero's skills and their levels to the menu
     for skill in hero.skills:
-        menu.append(Option('{name} {level}{max_level}{required}'.format(
+        menu.append(Option('{name} {level}/{max_level}{required}'.format(
             name=skill.name,
             level=skill.level,
-            max_level=('/'+str(skill.max_level)) 
-                if skill.max_level > 0 else '',
+            max_level=skill.max_level,
             required=(' (req {0})'.format(skill.required_level)
                 if skill.required_level > 0 else ''),
             highlight=False if skill.max_level == 0 or

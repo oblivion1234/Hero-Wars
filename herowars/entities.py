@@ -5,10 +5,14 @@
 # Hero Wars
 from herowars.tools import get_subclasses
 from herowars.tools import classproperty
+from herowars.tools import Event
 
 from herowars.configs import default_hero_category
 from herowars.configs import default_item_category
 from herowars.configs import item_sell_value_multiplier
+from herowars.configs import exp_algorithm
+
+from herowars.translations import get_translation
 
 # Source.Python
 from listeners.tick.repeat import TickRepeat
@@ -57,7 +61,7 @@ class Entity(object):
     description = 'This is an entity.'
     authors = 'Unknown'
     cost = 0
-    max_level = -1  # Negative value for unlimited
+    max_level = 10000
     enabled = True
     allowed_users = tuple()
 
@@ -103,9 +107,10 @@ class Entity(object):
         """
 
         if level < 0:
-            raise ValueError('Attempt to set negative level for an entity.')
-        elif level > self.max_level and self.max_level > 0:
-            raise ValueError('Attempt to set an entity over it\'s max level.')
+            raise ValueError('Attempt to set a negative level for an entity.')
+        elif level > self.max_level:
+            raise ValueError(
+                'Attempt to set an entity\'s level over it\'s maximum level.')
         self._level = level
 
     @classmethod
@@ -142,6 +147,10 @@ class Hero(Entity):
         exp: Hero's experience points for gradually leveling up
         required_exp: Experience points required for hero to level up
 
+    Events:
+        level_up: Fired when a hero levels up
+            *args: level_gain
+
     Class Attributes:
         skill_set (cls var): List of skill classes the hero will use
     """
@@ -171,6 +180,7 @@ class Hero(Entity):
             passive() for passive in self.passive_set if passive.enabled
         ]
         self.items = []
+        self.e_level_up = Event()
 
     @property
     def required_exp(self):
@@ -180,7 +190,9 @@ class Hero(Entity):
             Required experience points for leveling up
         """
         
-        return 100 + self.level * 25
+        if self.level >= self.max_level:
+            return 0
+        return exp_algorithm(self.level)
 
     @Entity.level.setter
     def level(self, level):
@@ -218,14 +230,36 @@ class Hero(Entity):
             ValueError: If attempting to set exp to a negative value
         """
 
+        # Make sure exp is positive
         if exp < 0:
             raise ValueError('Attempt to set negative exp for a hero.')
+
+        # Make sure hero is not already maxed out
+        if self.level >= self.max_level:
+            self._exp = 0
+            return
+
+        # If exp differs from current exp
         if exp != self._exp:
+
+            # Set the new exp and get old level
             self._exp = exp
-            # Increase levels if necessary
-            while self.exp >= self.required_exp:
+            old_lvl = self.level
+
+            # Increase levels while necessary
+            while (self.exp >= self.required_exp
+                    and self.level < self.max_level):
                 self._exp -= self.required_exp
                 self._level += 1
+
+            # Make sure the hero's level is not over the maximum level
+            if self.level >= self.max_level:
+                self._level = self.max_level
+                self._exp = 0
+
+            # Fire the level up event
+            if self.level > old_lvl:
+                self.e_level_up.fire(self, self.level - old_lvl)
 
     @property
     def skill_points(self):
@@ -307,7 +341,7 @@ class Skill(Entity):
     name = 'Unnamed Skill'
     description = 'This is a skill.'
     cost = 1
-    max_level = 8
+    max_level = 6
     required_level = 0
 
     def execute_method(self, method_name, **eargs):
@@ -340,7 +374,7 @@ class Item(Skill):
     name = 'Unnamed Item'
     description = 'This is an item.'
     cost = 10
-    permanent = False  # Stays after death?
+    permanent = False  # Does the item stay after death
     limit = 0
     category = default_item_category
 

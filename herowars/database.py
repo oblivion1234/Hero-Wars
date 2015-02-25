@@ -112,7 +112,7 @@ def load_player_data(database_file, player):
             "SELECT gold, hero_cls_id FROM players WHERE steamid=?",
             (player.steamid, )
         )
-        gold, hero_cls_id = cursor.fetchone() or (0, None)
+        gold, current_hero_cls_id = cursor.fetchone() or (0, None)
         player.gold = gold
 
         # Load player's heroes
@@ -121,12 +121,13 @@ def load_player_data(database_file, player):
             (player.steamid, )
         )
         for cls_id, level, exp in cursor.fetchall():
-            hero = find_element(heroes, 'cls_id', cls_id)(level, exp)
-            if hero:
+            hero_cls = find_element(heroes, 'cls_id', cls_id)
+            if hero_cls: 
+                hero = hero_cls(level, exp)
                 load_hero_data(database_file, player.steamid, hero)
                 player.heroes.append(hero)
-                if cls_id == hero_cls_id:
-                    player._hero = hero
+                if cls_id == current_hero_cls_id:
+                    player.hero = hero
 
 
 def load_hero_data(database_file, steamid, hero):
@@ -144,7 +145,12 @@ def load_hero_data(database_file, steamid, hero):
             "SELECT level, exp FROM heroes WHERE steamid=? AND cls_id=?",
             (steamid, hero.cls_id)
         )
-        hero.level, hero.exp = cursor.fetchone() or (0, 0)
+        level, exp = cursor.fetchone() or (0, 0)
+        if level > hero.max_level:
+            hero.level = hero.max._level
+        else:
+            hero.level = level
+        hero.exp = exp
 
         # Load hero's skills
         for skill in hero.skills:

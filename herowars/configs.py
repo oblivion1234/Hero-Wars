@@ -64,6 +64,10 @@ gold_values = dict(
 )
 
 
+# Show messages for gold gain
+show_gold_messages = True
+
+
 # Starting heroes for when a player joins the server for the first time
 # > Use class names for identifying the Hero classes
 starting_heroes = (
@@ -78,5 +82,11 @@ default_hero_category = 'Others'
 # Item category used when the category is not defined
 default_item_category = 'Others'
 
+
 # Items' default sell value's multiplier
 item_sell_value_multiplier = 0.5
+
+
+# Exp algorithm for required exp to level up
+def exp_algorithm(level):
+    return 100 + level * 20

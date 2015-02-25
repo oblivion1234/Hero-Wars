@@ -16,10 +16,14 @@ from herowars.configs import database_path
 from herowars.configs import starting_heroes
 from herowars.configs import default_lang_key
 
+from herowars.translations import get_translation
+
 # Source.Python
 from players.entity import PlayerEntity
 
 from players.helpers import index_from_userid
+
+from messages import SayText2
 
 
 # ======================================================================
@@ -90,7 +94,7 @@ def create_player(userid):
 
     # Make sure the player has a current hero
     if not player.hero and player.heroes:
-        player._hero = player.heroes[0]
+        player.hero = player.heroes[0]
 
     # Add the player to the global list and return the player
     players.append(player)
@@ -202,14 +206,23 @@ class _Player(PlayerEntity):
                 cls_id=hero.cls_id, steamid=self.steamid
             ))
 
-        # Destroy current hero's items
-        for item in self.hero.items:
-            if not item.permanent:
-                self.hero.items.remove(item)
+        # If player has a current hero
+        if self.hero:
 
-        # Save his current hero and change to the new one
-        save_hero_data(database_path, self.steamid, self.hero)
+            # Save current hero's data
+            save_hero_data(database_path, self.steamid, self.hero)
+
+            # Destroy current hero's items
+            for item in self.hero.items:
+                if not item.permanent:
+                    self.hero.items.remove(item)
+
+            # Stop listening to current hero's level up event
+            self.hero.e_level_up -= self._send_level_up_message
+
+        # Change to the new hero and listen to its level up event
         self._hero = hero
+        hero.e_level_up += self._send_level_up_message
 
     @property
     def cs_team(self):
@@ -222,3 +235,12 @@ class _Player(PlayerEntity):
         """Sets player's Counter-Strike team."""
 
         self.team = ['un', 'spec', 't', 'ct'].index(value)
+
+    def _send_level_up_message(self, sender, *args):
+        """Event listener for hero's level up event."""
+
+        translation = get_translation(self.lang_key, 'other', 'level_up')
+        SayText2(message=translation.format(
+            name=sender.name, level=sender.level,
+            exp=sender.exp, max_exp=sender.required_exp
+        )).send(self.index)

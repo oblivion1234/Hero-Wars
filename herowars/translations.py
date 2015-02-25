@@ -136,7 +136,6 @@ _translations = {
             not_enough_skill_points = ("You don't have enough skill points "
                                        "({skill_points}/{cost})."),
             skill_maxed_out = "Skill has already been maxed out."
-            
         ),
 
         # Menu options
@@ -164,8 +163,11 @@ _translations = {
         # Other translations
         'other': dict(
 
-            # Hero's status message
-            hero_status = "{name} - lvl {level} - {exp}/{max_exp} exp"
+            # Hero's status
+            hero_status = "{name} - lvl {level} - {exp}/{max_exp} exp",
+
+            # Level up
+            level_up = "{name} - lvl {level} - {exp}/{max_exp} exp"
         )
     }
 }

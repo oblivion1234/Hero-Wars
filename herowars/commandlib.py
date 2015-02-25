@@ -163,7 +163,7 @@ def get_nearby_players(point, radius, is_filters='alive', not_filters=''):
             not_filters=not_filters,
             return_types='userid'):
         player = get_player(userid)
-        if player and vector.get_distance(player.location) <= radius:
+        if vector.get_distance(player.location) <= radius:
             players.add(player)
     return sorted(players, key=lambda p: vector.get_distance(p.location))
 
