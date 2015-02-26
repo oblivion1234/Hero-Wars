@@ -225,16 +225,16 @@ def cooldownf(fn, message=None):
             if message:
 
                 # Format the provided message
-                message = message.format(
+                formatted = message.format(
                     name=self.name,
                     cd=method_wrapper.cooldown.remaining,
                     max_cd=method_wrapper.cooldown.limit
                 )
 
-                # Send it to the player
-                SayText2(message=message).send(eargs['player'].index)
+                # And send it to the player
+                SayText2(message=formatted).send(eargs['player'].index)
 
-                # And exit with code 3
+                # Finally exit with code 3
                 return 3
 
         # Create the cooldown object for the wrapper

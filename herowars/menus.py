@@ -50,7 +50,7 @@ class HwPagedMenu(PagedMenu):
     def __init__(
             self, data=None, select_callback=None,
             build_callback=None, description=None,
-            title=None, top_seperator=None, bottom_seperator=None):
+            title=None, top_seperator='-'*30, bottom_seperator='-'*30):
         super().__init__(
             data, select_callback, build_callback, description, title,
             top_seperator, bottom_seperator
