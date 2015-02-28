@@ -21,6 +21,7 @@ from herowars.configs import gold_values
 from herowars.configs import show_gold_messages
 from herowars.configs import chat_command_prefix
 from herowars.configs import starting_heroes
+from herowars.configs import default_lang_key
 
 from herowars.translations import get_translation
 
@@ -42,6 +43,8 @@ from cvars.public import PublicConVar
 
 from plugins.info import PluginInfo
 
+from messages import SayText2
+
 
 # ======================================================================
 # >> PLUGIN INFO
@@ -50,7 +53,7 @@ from plugins.info import PluginInfo
 info = PluginInfo()
 info.name = 'Hero Wars'
 info.author = 'Mahi, Kamiqawa'
-info.version = '0.3.2'
+info.version = '0.4.5'
 info.basename = 'herowars'
 info.variable = "{0}_version".format(info.basename)
 
@@ -86,7 +89,13 @@ def load():
         if not find_element(heroes, 'cls_id', cls_id):
             raise ValueError('Invalid starting hero: {0}'.format(cls_id))
     setup_database(database_path)
+
+    # Restart game
     engine_server.server_command('mp_restartgame 3\n')
+
+    SayText2(
+        message=get_translation(default_lang_key, 'other', 'plugin_loaded'
+    )).send()
 
 
 def unload():
@@ -94,6 +103,10 @@ def unload():
 
     for player in players:
         save_player_data(database_path, player)
+
+    SayText2(
+        message=get_translation(default_lang_key, 'other', 'plugin_unloaded'
+    )).send()
 
 
 def give_gold(player, gold_key):
@@ -300,7 +313,7 @@ def player_say(game_event):
 
     # If the text was '!hw' or '!herowars', open main menu
     elif text2 in ('hw', 'herowars'):
-        main_menu(player.index).send(player.index)
+        main_menu(player).send(player.index)
 
     # Finally, execute hero's on_say skills
     player.hero.execute_skills('on_say', player=player, text=text)
