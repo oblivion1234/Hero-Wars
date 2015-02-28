@@ -16,7 +16,7 @@ from herowars.configs import database_path
 from herowars.configs import starting_heroes
 from herowars.configs import default_lang_key
 
-from herowars.translations import get_translation
+from herowars.translations import get_prefixed_translation
 
 from herowars.menus import current_hero_info_menu
 
@@ -241,7 +241,8 @@ class _Player(PlayerEntity):
     def _send_level_up_message(self, sender, *args):
         """Event listener for hero's level up event."""
 
-        translation = get_translation(self.lang_key, 'other', 'level_up')
+        translation = get_prefixed_translation(
+            self.lang_key, 'other', 'level_up')
         SayText2(message=translation.format(
             name=sender.name, level=sender.level,
             exp=sender.exp, max_exp=sender.required_exp

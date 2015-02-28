@@ -11,6 +11,7 @@ from herowars.tools import find_element
 from herowars.tools import find_elements
 
 from herowars.translations import get_translation
+from herowars.translations import get_prefixed_translation
 
 # Python
 from functools import wraps
@@ -230,7 +231,7 @@ def buy_hero_menu(player):
         ))
 
     if not menu:
-        SayText2(message=get_translation(
+        SayText2(message=get_prefixed_translation(
             player.lang_key, 
             'menu_messages', 
             'no_heroes_to_buy'
@@ -284,7 +285,7 @@ def item_categories_menu(player):
         menu.append(Option(category, category))
 
     if not menu:
-        SayText2(message=get_translation(
+        SayText2(message=get_prefixed_translation(
             player.lang_key,
             'menu_messages', 
             'no_items_to_buy'
@@ -338,7 +339,7 @@ def buy_items_menu(player, chosen_category='Default'):
             ))
 
     if not menu:
-        SayText2(message=get_translation(
+        SayText2(message=get_prefixed_translation(
             player.lang_key, 
             'menu_messages', 
             'no_items_to_buy'
@@ -359,7 +360,7 @@ def _buy_items_menu_callback(menu, _, choice):
 
     # Check if player can buy the item
     if menu.player.cash < item_cls.cost:
-        translation = get_translation(
+        translation = get_prefixed_translation(
             menu.player.lang_key, 'menu_messages', 'not_enough_cash')
 
         SayText2(message=translation.format(
@@ -374,7 +375,7 @@ def _buy_items_menu_callback(menu, _, choice):
     # Buy the item
     menu.player.cash -= item_cls.cost
     menu.player.hero.items.append(item_cls())
-    translation = get_translation(
+    translation = get_prefixed_translation(
         menu.player.lang_key, 'menu_messages', 'bought_item')
 
     SayText2(message=translation.format(
@@ -418,7 +419,7 @@ def owned_heroes_menu(player):
         )
 
     if not menu:
-        SayText2(message=get_translation(
+        SayText2(message=get_prefixed_translation(
             player.lang_key, 
             'menu_messages', 
             'no_owned_heroes'
@@ -465,7 +466,7 @@ def sell_items_menu(player):
         ))
 
     if not menu:
-        SayText2(message=get_translation(
+        SayText2(message=get_prefixed_translation(
             player.lang_key, 
             'menu_messages', 
             'no_owned_items'
@@ -485,7 +486,7 @@ def _sell_items_menu_callback(menu, _, choice):
     menu.player.hero.items.remove(item)
     menu.player.cash += item.sell_value
 
-    translation = get_translation(
+    translation = get_prefixed_translation(
         menu.player.lang_key, 'menu_messages', 'sold_item')
 
     SayText2(message=translation.format(
@@ -556,7 +557,7 @@ def _buy_hero(menu, _, choice):
 
     # Check if player cannot buy the hero
     if menu.player.gold < hero.cost:
-            translation = get_translation(
+            translation = get_prefixed_translation(
                 menu.player.lang_key, 'menu_messages', 'not_enough_gold')
             SayText2(message=translation.format(
                 name=hero.name, 
@@ -574,7 +575,7 @@ def _buy_hero(menu, _, choice):
 
     # Change the hero automatically
     menu.player.hero = hero
-    translation = get_translation(
+    translation = get_prefixed_translation(
         menu.player.lang_key, 'menu_messages', 'bought_hero')
     SayText2(message=translation.format(
         name=hero.name, 
@@ -651,7 +652,7 @@ def _change_hero(menu, _, choice):
     """ 
     hero = menu.selected_hero
     menu.player.hero = hero
-    translation = get_translation(
+    translation = get_prefixed_translation(
         menu.player.lang_key, 'menu_messages', 'changed_hero')
     SayText2(message=translation.format(name=hero.name)).send(menu.player.index)
 
@@ -728,7 +729,7 @@ def _reset_skill_points(menu, _, choice):
     If option 7 was selected, reset skill points and refresh the menu.
     """
 
-    SayText2(message=get_translation(
+    SayText2(message=get_prefixed_translation(
         menu.player.lang_key, 
         'menu_messages', 
         'skill_points_reset'
@@ -755,7 +756,7 @@ def _current_hero_info_menu_callback(menu, _, choice):
     skill = choice.value
 
     if menu.player.hero.level < skill.required_level:
-        translation = get_translation(
+        translation = get_prefixed_translation(
             menu.player.lang_key, 
             'menu_messages', 
             'not_required_level'
@@ -772,7 +773,7 @@ def _current_hero_info_menu_callback(menu, _, choice):
         )
 
     elif menu.player.hero.skill_points < skill.cost:
-        translation = get_translation(
+        translation = get_prefixed_translation(
             menu.player.lang_key, 
             'menu_messages', 
             'not_enough_skill_points'
@@ -783,7 +784,7 @@ def _current_hero_info_menu_callback(menu, _, choice):
 
     else:  # Everything went good
         skill.level += 1
-        translation = get_translation(
+        translation = get_prefixed_translation(
             menu.player.lang_key, 
             'menu_messages', 
             'skill_leveled'

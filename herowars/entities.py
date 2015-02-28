@@ -12,8 +12,6 @@ from herowars.configs import default_item_category
 from herowars.configs import item_sell_value_multiplier
 from herowars.configs import exp_algorithm
 
-from herowars.translations import get_translation
-
 # Source.Python
 from listeners.tick.repeat import TickRepeat
 

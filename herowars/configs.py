@@ -26,7 +26,8 @@ chat_message_prefix = '[HW]'
 
 chat_message_colors = {
     'prefix':Color(185, 60, 80),
-    'text':Color(192, 188, 227)
+    'text':Color(192, 188, 227),
+    'highlight':Color(250, 250, 250)
 }
 #'prefix':Color(103, 99, 145),
 

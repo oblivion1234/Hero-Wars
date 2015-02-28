@@ -23,7 +23,7 @@ from herowars.configs import chat_command_prefix
 from herowars.configs import starting_heroes
 from herowars.configs import default_lang_key
 
-from herowars.translations import get_translation
+from herowars.translations import get_prefixed_translation
 
 from herowars.menus import main_menu
 
@@ -94,7 +94,7 @@ def load():
     engine_server.server_command('mp_restartgame 3\n')
 
     SayText2(
-        message=get_translation(default_lang_key, 'other', 'plugin_loaded'
+        message=get_prefixed_translation(default_lang_key, 'other', 'plugin_loaded'
     )).send()
 
 
@@ -105,7 +105,7 @@ def unload():
         save_player_data(database_path, player)
 
     SayText2(
-        message=get_translation(default_lang_key, 'other', 'plugin_unloaded'
+        message=get_prefixed_translation(default_lang_key, 'other', 'plugin_unloaded'
     )).send()
 
 
@@ -122,7 +122,7 @@ def give_gold(player, gold_key):
     gold = gold_values.get(gold_key, 0)
     if gold > 0:
         player.gold += gold
-        translation = get_translation(player.lang_key, 'gold', gold_key)
+        translation = get_prefixed_translation(player.lang_key, 'gold', gold_key)
         cmdlib.tell(player, translation.format(gold=gold))
 
 
@@ -137,7 +137,7 @@ def give_exp(player, exp_key):
     exp = exp_values.get(exp_key, 0)
     if exp > 0:
         player.hero.exp += exp
-        translation = get_translation(player.lang_key, 'exp', exp_key)
+        translation = get_prefixed_translation(player.lang_key, 'exp', exp_key)
         cmdlib.tell(player, translation.format(exp=exp))
 
 
@@ -193,7 +193,7 @@ def player_spawn(game_event):
         player = create_player(userid)
 
     # Show current exp and level
-    translation = get_translation(player.lang_key, 'other', 'hero_status')
+    translation = get_prefixed_translation(player.lang_key, 'other', 'hero_status')
     cmdlib.tell(player, translation.format(
         name=player.hero.name, level=player.hero.level,
         exp=player.hero.exp, max_exp=player.hero.required_exp))
