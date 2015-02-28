@@ -4,7 +4,11 @@
 
 # Hero Wars
 from herowars.configs import default_lang_key
+from herowars.configs import chat_message_prefix
+from herowars.configs import chat_message_colors
 
+# Source Python
+from basetypes import Color
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -51,7 +55,18 @@ def get_translation(lang_key, sub_dict, key):
     if sub_dict in lang_dict:
 
         # Return the proper translation
-        return lang_dict[sub_dict].get(key, '#null_str')
+        if sub_dict == 'menus':  # Menu options need raw text
+            return lang_dict[sub_dict].get(key, '#null_str')
+
+        # Others than menus use prefixed, colored text
+        return '{prefix_color}{prefix} {text_color}{text}'.format(
+            prefix_color=chat_message_colors['prefix'],
+            prefix=chat_message_prefix,
+            text_color=chat_message_colors['text'],
+            text=lang_dict[sub_dict].get(key, '#null_str')
+        )
+
+        
 
     # Else raise an error of the sub dict
     raise KeyError('Invalid sub dict key: {key}'.format(key=sub_dict))
@@ -82,7 +97,7 @@ _translations = {
             round_lose = "+{exp} exp for losing a round.",
 
             # Bomb values
-            bomb_plant = "+{exp} exp for plating the bomb.",
+            bomb_plant = "+{exp} exp for planting the bomb.",
             bomb_plant_team = "+{exp} exp for bomb being planted.",
             bomb_explode = "+{exp} exp for bomb exploding.",
             bomb_explode_team = "+{exp} exp for bomb exploding.",
@@ -113,7 +128,7 @@ _translations = {
 
             # Item values
             no_items_to_buy = "There are no items to buy.",
-            no_owned_items = "You don't have any items",
+            no_owned_items = "You don't have any items.",
             not_enough_cash = "You don't have enough cash (${cash}/${cost}).",
 
             bought_item = "You bought item '{name}' for ${cost}.",
@@ -162,6 +177,10 @@ _translations = {
 
         # Other translations
         'other': dict(
+
+            # Plugin setup
+            plugin_loaded = 'Hero Wars loaded.',
+            plugin_unloaded = 'Hero Wars unloaded.',
 
             # Hero's status
             hero_status = "{name} - lvl {level} - {exp}/{max_exp} exp",

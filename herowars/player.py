@@ -18,6 +18,8 @@ from herowars.configs import default_lang_key
 
 from herowars.translations import get_translation
 
+from herowars.menus import current_hero_info_menu
+
 # Source.Python
 from players.entity import PlayerEntity
 
@@ -244,3 +246,14 @@ class _Player(PlayerEntity):
             name=sender.name, level=sender.level,
             exp=sender.exp, max_exp=sender.required_exp
         )).send(self.index)
+
+        # Check if player can use skill points
+        for skill in self.hero.skills:
+            if (self.hero.skill_points >= skill.cost 
+                    and skill.level < skill.max_level 
+                    and self.hero.level >= skill.required_level):
+
+                # If there are usable skill points, send the menu
+                current_hero_info_menu(self).send(self.index)
+                break
+            
