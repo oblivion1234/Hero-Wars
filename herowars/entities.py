@@ -5,7 +5,6 @@
 # Hero Wars
 from herowars.tools import get_subclasses
 from herowars.tools import classproperty
-from herowars.tools import Event
 
 from herowars.configs import default_hero_category
 from herowars.configs import default_item_category
@@ -138,16 +137,12 @@ class Hero(Entity):
     experience points (exp) until the hero levels up.
     Experience points are gained from in-game tasks, such as killing
     enemies and planting bombs.
-    After leveling up, player can upgrade the hero's skills a little.
+    After leveling up, player can upgrade the hero's skills.
 
     Attributes:
         skills: List of hero object's skills
         exp: Hero's experience points for gradually leveling up
         required_exp: Experience points required for hero to level up
-
-    Events:
-        level_up: Fired when a hero levels up
-            *args: level_gain
 
     Class Attributes:
         skill_set (cls var): List of skill classes the hero will use
@@ -178,7 +173,6 @@ class Hero(Entity):
             passive() for passive in self.passive_set if passive.enabled
         ]
         self.items = []
-        self.e_level_up = Event()
 
     @property
     def required_exp(self):
@@ -257,7 +251,7 @@ class Hero(Entity):
 
             # Fire the level up event
             if self.level > old_lvl:
-                self.e_level_up.fire(self, self.level - old_lvl)
+                pass  # Raise level up event
 
     @property
     def skill_points(self):

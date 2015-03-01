@@ -84,8 +84,8 @@ def load():
             raise ValueError('Invalid starting hero: {0}'.format(cls_id))
     setup_database(cfg.database_path)
 
-    # Restart game
-    engine_server.server_command('mp_restartgame 3\n')
+    # Restart the game
+    engine_server.server_command('mp_restartgame 1\n')
 
     # Send a message to everyone
     tr = get_prefixed_translation(
