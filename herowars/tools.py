@@ -30,28 +30,6 @@ class classproperty(object):
         return self.getter(owner)
 
 
-class Event(set):
-    """Event class for simple events such as leveling up."""
-
-    def __iadd__(self, listener):
-        """Add a listener using += operator."""
-
-        self.add(listener)
-        return self
-
-    def __isub__(self, listener):
-        """Remove a listener using -= operator."""
-
-        self.remove(listener)
-        return self
-
-    def fire(self, sender, *args, **kwargs):
-        """Fire the event calling all of its listeners."""
-        
-        for listener in self:
-            listener(sender, *args, **kwargs)
-
-
 # ======================================================================
 # >> FUNCTIONS
 # ======================================================================
@@ -197,7 +175,7 @@ def cooldownf(fn, message=None):
     (function) into skill's methods. The function gets called when the
     cooldown is needed, and the skill is passed to the function.
 
-    Args:   
+    Args:
         fn: Function to determine the cooldown of the method
         message: Optional message sent if there's still cooldown left
     
@@ -211,7 +189,7 @@ def cooldownf(fn, message=None):
         # Create a wrapper method
         @wraps(method, assigned=WRAPPER_ASSIGNMENTS+('__dict__',), updated=())
         def method_wrapper(self, **eargs):
-            
+
             # If the method's cooldown is over
             if method_wrapper.cooldown.remaining <= 0:
 
@@ -225,16 +203,16 @@ def cooldownf(fn, message=None):
             if message:
 
                 # Format the provided message
-                formatted = message.format(
+                formatted_message = message.format(
                     name=self.name,
                     cd=method_wrapper.cooldown.remaining,
                     max_cd=method_wrapper.cooldown.limit
                 )
 
                 # And send it to the player
-                SayText2(message=formatted).send(eargs['player'].index)
+                SayText2(message=formatted_message).send(eargs['player'].index)
 
-                # Finally exit with code 3
+                # And exit with code 3
                 return 3
 
         # Create the cooldown object for the wrapper

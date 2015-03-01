@@ -15,14 +15,6 @@ from herowars.entities import Hero
 
 from herowars.tools import find_element
 
-from herowars.configs import database_path
-from herowars.configs import exp_values
-from herowars.configs import gold_values
-from herowars.configs import show_gold_messages
-from herowars.configs import chat_command_prefix
-from herowars.configs import starting_heroes
-from herowars.configs import default_lang_key
-
 from herowars.translations import get_prefixed_translation
 
 from herowars.menus import main_menu
@@ -31,6 +23,8 @@ from herowars.heroes import *
 from herowars.items import *
 
 import herowars.commandlib as cmdlib
+
+import herowars.configs as cfg
 
 # Source.Python 
 from events import Event
@@ -83,30 +77,35 @@ def load():
     heroes = Hero.get_subclasses()
     if not heroes:
         raise NotImplementedError('No heroes on the server.')
-    if not starting_heroes:
+    if not cfg.starting_heroes:
         raise NotImplementedError('No starting heroes set.')
-    for cls_id in starting_heroes:
+    for cls_id in cfg.starting_heroes:
         if not find_element(heroes, 'cls_id', cls_id):
             raise ValueError('Invalid starting hero: {0}'.format(cls_id))
-    setup_database(database_path)
+    setup_database(cfg.database_path)
 
     # Restart game
     engine_server.server_command('mp_restartgame 3\n')
 
-    SayText2(
-        message=get_prefixed_translation(default_lang_key, 'other', 'plugin_loaded'
-    )).send()
+    # Send a message to everyone
+    tr = get_prefixed_translation(
+        cfg.default_lang_key, 'other', 'plugin_loaded'
+    )
+    SayText2(message=tr).send()
 
 
 def unload():
     """Save all unsaved data into database."""
 
+    # Save each player's data into the database
     for player in players:
-        save_player_data(database_path, player)
+        save_player_data(cfg.database_path, player)
 
-    SayText2(
-        message=get_prefixed_translation(default_lang_key, 'other', 'plugin_unloaded'
-    )).send()
+    # Send a message to everyone
+    tr = get_prefixed_translation(
+        cfg.default_lang_key, 'other', 'plugin_unloaded'
+    )
+    SayText2(message=tr).send()
 
 
 def give_gold(player, gold_key):
@@ -117,13 +116,13 @@ def give_gold(player, gold_key):
         gold_key: Key used for finding the gold value and translation
     """
 
-    if not show_gold_messages:
+    if not cfg.show_gold_messages:
         return
-    gold = gold_values.get(gold_key, 0)
+    gold = cfg.gold_values.get(gold_key, 0)
     if gold > 0:
         player.gold += gold
-        translation = get_prefixed_translation(player.lang_key, 'gold', gold_key)
-        cmdlib.tell(player, translation.format(gold=gold))
+        tr = get_prefixed_translation(player.lang_key, 'gold', gold_key)
+        cmdlib.tell(player, tr.format(gold=gold))
 
 
 def give_exp(player, exp_key):
@@ -134,11 +133,11 @@ def give_exp(player, exp_key):
         exp_key: Key used for finding the exp value and translation
     """
 
-    exp = exp_values.get(exp_key, 0)
+    exp = cfg.exp_values.get(exp_key, 0)
     if exp > 0:
         player.hero.exp += exp
-        translation = get_prefixed_translation(player.lang_key, 'exp', exp_key)
-        cmdlib.tell(player, translation.format(exp=exp))
+        tr = get_prefixed_translation(player.lang_key, 'exp', exp_key)
+        cmdlib.tell(player, tr.format(exp=exp))
 
 
 def give_team_exp(player, exp_key):
@@ -184,7 +183,7 @@ def player_spawn(game_event):
     if player:
 
         # Save his data
-        save_player_data(database_path, player)
+        save_player_data(cfg.database_path, player)
 
     # If the player wasn't found
     else:
@@ -193,8 +192,8 @@ def player_spawn(game_event):
         player = create_player(userid)
 
     # Show current exp and level
-    translation = get_prefixed_translation(player.lang_key, 'other', 'hero_status')
-    cmdlib.tell(player, translation.format(
+    tr = get_prefixed_translation(player.lang_key, 'other', 'hero_status')
+    cmdlib.tell(player, tr.format(
         name=player.hero.name, level=player.hero.level,
         exp=player.hero.exp, max_exp=player.hero.required_exp))
 
@@ -301,11 +300,11 @@ def player_say(game_event):
     text = game_event.get_string('text')
 
     # If text doesn't begin with the prefix, it's useless for us
-    if text[:len(chat_command_prefix)] != chat_command_prefix:
+    if text[:len(cfg.chat_command_prefix)] != cfg.chat_command_prefix:
         return
 
     # Get the ACTUAL text without the prefix
-    text2 = text[len(chat_command_prefix):]
+    text2 = text[len(cfg.chat_command_prefix):]
 
     # If the text was '!ultimate', execute ultimate skills
     if text2 == 'ultimate':

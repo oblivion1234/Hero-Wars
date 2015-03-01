@@ -18,14 +18,10 @@ from herowars.configs import default_lang_key
 
 from herowars.translations import get_prefixed_translation
 
-from herowars.menus import current_hero_info_menu
-
 # Source.Python
 from players.entity import PlayerEntity
 
 from players.helpers import index_from_userid
-
-from messages import SayText2
 
 
 # ======================================================================
@@ -140,21 +136,17 @@ class _Player(PlayerEntity):
         lang_key: Language key used to display messages and menus
     """
 
-    def __new__(cls, index, gold=0, lang_key=default_lang_key):
+    def __init__(self, index):
         """Creates a new Hero Wars player.
 
         Args:
             index: Player's index
-            gold: Player's Hero Wars gold
-            lang_key: Language key used for messages and menus
         """
 
-        self = super().__new__(cls, index)
-        self._gold = gold
+        self._gold = 0
         self._hero = None
         self.heroes = []
-        self.lang_key = lang_key
-        return self
+        self.lang_key = default_lang_key
 
     @property
     def gold(self):
@@ -219,12 +211,8 @@ class _Player(PlayerEntity):
                 if not item.permanent:
                     self.hero.items.remove(item)
 
-            # Stop listening to current hero's level up event
-            self.hero.e_level_up -= self._send_level_up_message
-
-        # Change to the new hero and listen to its level up event
+        # Change to the new hero
         self._hero = hero
-        hero.e_level_up += self._send_level_up_message
 
     @property
     def cs_team(self):
@@ -237,24 +225,3 @@ class _Player(PlayerEntity):
         """Sets player's Counter-Strike team."""
 
         self.team = ['un', 'spec', 't', 'ct'].index(value)
-
-    def _send_level_up_message(self, sender, *args):
-        """Event listener for hero's level up event."""
-
-        translation = get_prefixed_translation(
-            self.lang_key, 'other', 'level_up')
-        SayText2(message=translation.format(
-            name=sender.name, level=sender.level,
-            exp=sender.exp, max_exp=sender.required_exp
-        )).send(self.index)
-
-        # Check if player can use skill points
-        for skill in self.hero.skills:
-            if (self.hero.skill_points >= skill.cost 
-                    and skill.level < skill.max_level 
-                    and self.hero.level >= skill.required_level):
-
-                # If there are usable skill points, send the menu
-                current_hero_info_menu(self).send(self.index)
-                break
-            
