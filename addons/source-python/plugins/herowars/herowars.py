@@ -3,21 +3,24 @@
 # ======================================================================
 
 # Hero Wars
-from herowars.player import get_player
-from herowars.player import create_player
-from herowars.player import remove_player
-from herowars.player import players
+from herowars.players import get_player
+from herowars.players import create_player
+from herowars.players import remove_player
+from herowars.players import player_list
 
 from herowars.database import setup_database
 from herowars.database import save_player_data
 
 from herowars.entities import Hero
 
+from herowars.events import Hero_Level_Up
+
 from herowars.tools import find_element
 from herowars.tools import get_messages
 
 from herowars.menus import main_menu
 from herowars.menus import admin_menu
+from herowars.menus import current_hero_info_menu
 
 from herowars.heroes import *
 from herowars.items import *
@@ -64,9 +67,9 @@ info.convar = PublicConVar(
 # >> TRANSLATIONS
 # ======================================================================
 
-exp_messages = get_messages(LangStrings('herowars/exp_messages'))
-gold_messages = get_messages(LangStrings('herowars/gold_messages'))
-other_messages = get_messages(LangStrings('herowars/other_messages'))
+exp_messages = get_messages(LangStrings('herowars/exp'))
+gold_messages = get_messages(LangStrings('herowars/gold'))
+other_messages = get_messages(LangStrings('herowars/other'))
 
 
 # ======================================================================
@@ -104,7 +107,7 @@ def unload():
     """Save all unsaved data into database."""
 
     # Save each player's data into the database
-    for player in players:
+    for player in player_list:
         save_player_data(cfg.database_path, player)
 
     # Send a message to everyone
@@ -160,6 +163,42 @@ def give_team_exp(player, exp_key):
 # ======================================================================
 # >> GAME EVENTS
 # ======================================================================
+
+@Event
+def pre_hero_level_up(game_event):
+    """Fetches the player and raises the Hero_Level_Up event."""
+
+    hero_id = game_event.get_int('id')
+    owner = None
+    for player in player_list:
+        if id(player.hero) == hero_id:
+            owner = player
+            break
+    if owner:
+        hero_level_up_event = Hero_Level_Up(
+            cls_id=game_event.get_string('cls_id'),
+            id=hero_id,
+            player_index=owner.index,
+            player_userid=owner.userid 
+        )
+        hero_level_up_event.fire()
+
+
+@Event
+def hero_level_up(game_event):
+    """Sends hero's status to player and opens current hero menu."""
+
+    player = get_player(game_event.get_int('player_userid'))
+    hero = player.hero
+    other_messages['Hero Status'].send(
+        player.index,
+        name=hero.name,
+        level=hero.level,
+        current=hero.exp,
+        required=hero.required_exp
+    )
+    current_hero_info_menu(player).send(player.index)
+
 
 @Event
 def player_disconnect(game_event):

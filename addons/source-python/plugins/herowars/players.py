@@ -26,7 +26,7 @@ from players.helpers import index_from_userid
 # ======================================================================
 
 __all__ = (
-    'player',
+    'player_list',
     'get_player',
     'create_player',
     'remove_player'
@@ -37,7 +37,7 @@ __all__ = (
 # >> GLOBALS
 # ======================================================================
 
-players = []
+player_list = []
 
 
 # ======================================================================
@@ -47,7 +47,7 @@ players = []
 def get_player(value, key='userid'):
     """Gets a player with matching key.
 
-    Loops through the players list and returns a player with matching
+    Loops through the player list and returns a player with matching
     key to the provided parameter value.
 
     Args:
@@ -58,7 +58,7 @@ def get_player(value, key='userid'):
         Player with matching key or None
     """
 
-    return find_element(players, key, value)
+    return find_element(player_list, key, value)
 
 
 def create_player(userid):
@@ -67,13 +67,13 @@ def create_player(userid):
     Creates a new player object, loads any saved data from the database
     based on SteamID, makes sure the player gets the starting heroes
     and has a current hero set. Finally returns the player after adding
-    him to the global players list.
+    him to the global player list.
 
     Args:
         userid: Userid of the player to create
 
     Returns:
-        New player who's been added to the players list
+        New player who's been added to the player list
     """
 
     # Create a new player and load his data from the database (if any)
@@ -92,7 +92,7 @@ def create_player(userid):
         player.hero = player.heroes[0]
 
     # Add the player to the global list and return the player
-    players.append(player)
+    player_list.append(player)
     return player
 
 
@@ -100,7 +100,7 @@ def remove_player(userid):
     """Removes a player, inserting his data into the database.
 
     Finds a player with given userid, saving his data into the database
-    and removing him from the global players list.
+    and removing him from the global player list.
 
     Args:
         userid: Userid of the player to remove
@@ -112,7 +112,7 @@ def remove_player(userid):
 
         # Save player's data and remove him
         save_player_data(database_path, player)
-        players.remove(player)
+        player_list.remove(player)
 
 
 # ======================================================================

@@ -11,6 +11,8 @@ from herowars.configs import default_item_category
 from herowars.configs import item_sell_value_multiplier
 from herowars.configs import exp_algorithm
 
+from herowars.events import Pre_Hero_Level_Up
+
 # Source.Python
 from listeners.tick.repeat import TickRepeat
 
@@ -200,6 +202,11 @@ class Hero(Entity):
 
         self._exp = 0
         Entity.level.fset(self, level)  # Call to Entity's level setter
+        self._fire_level_up_event()
+
+    def _fire_level_up_event(self):
+        event = Pre_Hero_Level_Up(cls_id=self.cls_id, id=id(self))
+        event.fire()
 
     @property
     def exp(self):
@@ -251,7 +258,7 @@ class Hero(Entity):
 
             # Fire the level up event
             if self.level > old_lvl:
-                pass  # Raise level up event
+                self._fire_level_up_event()
 
     @property
     def skill_points(self):

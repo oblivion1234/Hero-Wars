@@ -7,7 +7,7 @@ from herowars.entities import Hero
 from herowars.entities import Skill
 from herowars.entities import Item
 
-from herowars.player import players
+from herowars.players import player_list
 
 from herowars.tools import find_element
 from herowars.tools import find_elements
@@ -59,31 +59,31 @@ class HwPagedMenu(PagedMenu):
 
     @wraps(PagedMenu.__init__)
     def __init__(
-            self, data=None, select_callback=None,
-            build_callback=None, description=None,
-            title=None, top_seperator='-'*30, bottom_seperator='-'*30):
+            self, data=None, select_callback=None, build_callback=None,
+            description=None, title=None,
+            top_seperator=None, bottom_seperator=None, fill=False,
+            option7=None, option8=None, player=None, page_info=False):
         super().__init__(
             data, select_callback, build_callback, description, title,
-            top_seperator, bottom_seperator
+            top_seperator, bottom_seperator, fill
         )
-        self.option7 = None  # Custom slot 7
-        self.option8  = None  # Custom slot 8 (back)
-        self.player = None  # The player the menu is built for
-        self.page_info = True  # True: shows pagenumber
-
+        self.option7 = option7  # Custom slot 7
+        self.option8  = option8  # Custom slot 8 (back)
+        self.player = player  # The player the menu is built for
+        self.page_info = page_info  # True: shows pagenumber
 
     @wraps(PagedMenu._format_header)
-    def _format_header(self, ply_index, page, slots):
+    def _format_header(self, player_index, page, slots):
         info = ''
-        if self.page_info == True:  # Check to show pagenumber
-            # Create the page info string
-            info = '[{0}/{1}]\n'.format(page.index + 1, self.page_count)
-        buffer = (_translate_text(self.title or '', ply_index)).ljust(
-            len(self.top_seperator) - len(info)) + info
+        if self.page_info:  # Create the page info string
+            info += '[{0}/{1}]\n'.format(page.index + 1, self.page_count)
+
+        buffer = '{0} {1}'.format(_translate_text(
+            self.title, player_index), info) if self.title else info
 
         # Set description if present
         if self.description is not None:
-            buffer += _translate_text(self.description, ply_index) + '\n'
+            buffer += _translate_text(self.description, player_index) + '\n'
 
         # Set the top seperator if present
         if self.top_seperator is not None:
@@ -702,17 +702,21 @@ def owned_hero_info_menu(player, hero=None):
 
     # Add all the hero's skills, their levels and descriptions to the menu
     for skill in hero.skills:
+        required = (skill.required_level > 0
+            and hero.level < skill.required_level)
         menu.append(
             Option('{name} {level}/{max}{required}\n{description}'.format(
                 name=skill.name,
                 level=skill.level,
-                required=(' (req {0})'.format(skill.required_level)
-                    if skill.required_level > 0 
-                    and hero.level < skill.required_level else ''),
+                required=(
+                    ' (req {0})'.format(skill.required_level)
+                    if required else ''
+                ),
                 max=skill.max_level,
                 description=skill.description
             ), 
-            None  # No value needed for now
+            None,  # No value needed for now
+            highlight=not required
         ))
 
     for passive in hero.passives:
@@ -779,23 +783,27 @@ def current_hero_info_menu(player, return_to_main_menu=False):
         menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     # Override the bottom seperator to display available skill points
-    menu.bottom_seperator = (
-        menu.bottom_seperator + '\n' +
-        'SP: {0}'.format(player.hero.skill_points)
-        + '\n' + menu.bottom_seperator
-    )
+    if menu.bottom_seperator:
+        menu.bottom_seperator = (
+            menu.bottom_seperator + '\n' +
+            'SP: {0}'.format(player.hero.skill_points)
+            + '\n' + menu.bottom_seperator
+        )
 
     # Add all hero's skills and their levels to the menu
     for skill in player.hero.skills:
-        menu.append(Option('{name} {level}/{max_level}{required}'.format(
-            name=skill.name,
-            level=skill.level,
-            max_level=skill.max_level,
-            required=(' (req {0})'.format(skill.required_level)
-                if skill.required_level > 0 
-                and player.hero.level < skill.required_level else ''),
-            highlight=False if skill.max_level == 0 or
-                skill.level >= skill.max_level else True
+        required = (skill.required_level > 0
+            and player.hero.level < skill.required_level)
+        menu.append(
+            Option('{name} {level}/{max_level}{required}'.format(
+                name=skill.name,
+                level=skill.level,
+                max_level=skill.max_level,
+                required=(
+                    ' (req {0})'.format(skill.required_level)
+                    if required else ''
+                ),
+                highlight=not required
             ),
             skill,
         ))
@@ -943,7 +951,7 @@ def player_pick_menu(player, callback_function, previous_menu=None):
         menu.option8 = HwOption(menu_options['Back'], previous_menu, player=player)
 
     # Add all players into the menu
-    for player in players:
+    for player in player_list:
         menu.append(Option(player.name, player))
     
     return menu
@@ -1069,6 +1077,3 @@ def _admin_give_amount_callback(menu, _, choice):
         menu.chosen_player, 
         menu.chosen_attr
     ).send(menu.player.index)
-
-
-

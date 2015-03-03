@@ -8,7 +8,7 @@ from herowars.entities import Hero, Skill
 from herowars.tools import chance, chancef
 from herowars.tools import cooldown, cooldownf
 
-from herowars.player import get_player
+from herowars.players import get_player
 
 import herowars.commandlib as cmdlib
 

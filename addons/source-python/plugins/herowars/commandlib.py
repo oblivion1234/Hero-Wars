@@ -3,7 +3,7 @@
 # ======================================================================
 
 # Hero Wars
-from herowars.player import get_player
+from herowars.players import get_player
 
 # Python 3
 from collections import defaultdict
