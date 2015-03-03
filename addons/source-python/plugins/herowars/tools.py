@@ -34,6 +34,20 @@ class classproperty(object):
 # >> FUNCTIONS
 # ======================================================================
 
+def get_messages(lang_strings):
+    """Gets a dict of SayText2 messages from a LangStrings object.
+
+    Args:
+        lang_strings: LangStrings object used to fetch the messages
+
+    Returns:
+        A dict of SayText2 messages
+    """
+
+    return {key: SayText2(message=lang_strings[key]) for key in lang_strings}
+
+
+
 def find_element(iterable, attr_name, attr_value):
     """Finds an element from an iterable by an attribute.
 

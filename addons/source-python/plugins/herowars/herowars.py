@@ -14,10 +14,9 @@ from herowars.database import save_player_data
 from herowars.entities import Hero
 
 from herowars.tools import find_element
+from herowars.tools import get_messages
 
 from herowars.menus import main_menu
-
-from herowars.translation import get_messages
 
 from herowars.heroes import *
 from herowars.items import *
@@ -36,6 +35,8 @@ from cvars.public import PublicConVar
 from plugins.info import PluginInfo
 
 from messages import SayText2
+
+from translations.strings import LangStrings
 
 
 # ======================================================================
@@ -62,9 +63,9 @@ info.convar = PublicConVar(
 # >> TRANSLATIONS
 # ======================================================================
 
-exp_messages = get_messages('exp_messages')
-gold_messages = get_messages('gold_messages')
-other_messages = get_messages('other_messages')
+exp_messages = get_messages(LangStrings('herowars/messages'))
+gold_messages = get_messages(LangStrings('herowars/gold_messages'))
+other_messages = get_messages(LangStrings('herowars/other_messages'))
 
 
 # ======================================================================
