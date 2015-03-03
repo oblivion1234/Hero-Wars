@@ -7,11 +7,11 @@ from herowars.entities import Hero
 from herowars.entities import Skill
 from herowars.entities import Item
 
+from herowars.player import players
+
 from herowars.tools import find_element
 from herowars.tools import find_elements
-
-from herowars.translations import get_translation
-from herowars.translations import get_prefixed_translation
+from herowars.tools import get_messages
 
 # Python
 from functools import wraps
@@ -19,14 +19,26 @@ from functools import wraps
 # Source.Python
 from menus import PagedMenu
 from menus import SimpleMenu
-from menus import Option
+from menus import PagedOption as Option
+from menus import SimpleOption
 from menus import Text
 
 from menus.base import _translate_text
 
-from messages import SayText2
+from translations.strings import LangStrings
+from translations.strings import TranslationStrings
 
+from players.helpers import get_client_language
 from players.helpers import userid_from_index
+
+
+
+# ======================================================================
+# >> TRANSLATIONS
+# ======================================================================
+
+menu_options = LangStrings('herowars/menu_options')
+menu_messages = get_messages(LangStrings('herowars/menu_messages'))
 
 
 # ======================================================================
@@ -55,7 +67,7 @@ class HwPagedMenu(PagedMenu):
             top_seperator, bottom_seperator
         )
         self.option7 = None  # Custom slot 7
-        self.option8 = None  # Custom slot 8 (back)
+        self.option8  = None  # Custom slot 8 (back)
         self.player = None  # The player the menu is built for
         self.page_info = True  # True: shows pagenumber
 
@@ -80,7 +92,7 @@ class HwPagedMenu(PagedMenu):
         return buffer
 
 
-    @wraps(PagedMenu._format_body)
+    """@wraps(PagedMenu._format_body)
     def _format_body(self, ply_index, page, slots):
         buffer = ''
 
@@ -102,11 +114,21 @@ class HwPagedMenu(PagedMenu):
         # Fill the rest of the menu
         buffer += ' \n' * (n - len(options))
 
-        return buffer
+        return buffer"""
+
+    """@wraps(PagedMenu._format_body)
+    def _format_body(self, player_index, page, slots):
+        buffer = super()._format_body(player_index, page, slots)
+        if self.option7:
+            buffer += self.option7._render(player_index, 7)
+        return buffer"""
+
+    def _get_max_item_count(self):
+        return 6 if self.option7 else 7
 
     @wraps(PagedMenu._format_footer)
     def _format_footer(self, ply_index, page, slots):
-        buffer = ''
+        buffer = '' 
 
         # Set the bottom seperator if present
         if self.bottom_seperator is not None:
@@ -138,21 +160,110 @@ class HwPagedMenu(PagedMenu):
         # Return the buffer
         return buffer
 
+
     @wraps(PagedMenu._select)
-    def _select(self, ply_index, choice):
+    def _select(self, player_index, choice_index):
         """Callbacks for custom option7 and option8"""
 
-        if choice == 7 and self.option7:
+        if choice_index == 7 and self.option7:
             # Call option7's value function
-            return self.option7.value(self, self.player.index, choice)
+            return self.option7.value(self, self.player.index, choice_index)
 
-        elif (choice == 8 and self.option8 and 
+        elif (choice_index == 8 and self.option8 and 
                 self._player_pages[self.player.index].index == 0):
             # Call option8's value function (menu-returning function)
-            return self.option8.value(self.player)
+            return self.option8.value(**self.option8.kwargs)
 
-        return super()._select(self.player.index, choice)
+        return super()._select(self.player.index, choice_index)
 
+    """def _select(self, player_index, choice_index):
+
+        # Do nothing if the menu is being closed
+        if choice_index == 0:
+            del self._player_pages[player_index]
+            return None
+
+        # Get the player's current page
+        page = self._player_pages[player_index]
+
+        # Display previous page?
+        if choice_index == 8:
+            self.set_player_page(player_index, page.index - 1)
+            return self
+
+        # Display next page?
+        if choice_index == 9:
+            self.set_player_page(player_index, page.index + 1)
+            return self
+
+        return super(PagedRadioMenu, self)._select(player_index, choice_index)"""
+
+class HwText(Text):
+
+    @wraps(Text.__init__)
+    def __init__(self, text, **kwargs):
+        super().__init__(text)
+        self.kwargs = kwargs
+
+    @wraps(Text._render)
+    def _render(self, player_index, choice_index=None):
+        """Render the data.
+
+        @param <player_index>:
+        A player index.
+
+        @param <choice_index>:
+        The number should be required to select this item. It depends on the
+        menu type if this parameter gets passed.
+        """
+        return str(_hw_translate_text(
+            self.text, 
+            player_index,
+            **self.kwargs
+        )) + '\n'
+
+
+class HwOption(Option):
+
+    @wraps(Option.__init__)
+    def __init__(self, text, value=None, highlight=True, 
+            selectable=True, translate_kwargs=dict(), **kwargs):
+    
+        super().__init__(text, value, highlight, selectable)
+        self.translate_kwargs = translate_kwargs
+        self.kwargs = kwargs
+
+    @wraps(Option._render)  
+    def _render(self, player_index, choice_index):
+        """Render the data.
+
+        @param <player_index>:
+        A player index.
+
+        @param <choice_index>:
+        The number should be required to select this item. It depends on the
+        menu type if this parameter gets passed.
+        """
+        return '{0}{1}. {2}\n'.format(
+            self._get_highlight_prefix(),
+            choice_index,
+            _hw_translate_text(
+                self.text, 
+                player_index, 
+                **self.translate_kwargs
+            )
+        )
+
+
+def _hw_translate_text(text, player_index, **kwargs):
+    """Translate <text> if it is an instance of TranslationStrings.
+
+    Otherwise the original text will be returned.
+    """
+    if isinstance(text, TranslationStrings):
+        return text.get_string(get_client_language(player_index), **kwargs)
+
+    return text
 
 # ======================================================================
 # >> MAINMENU
@@ -165,32 +276,32 @@ def main_menu(player):
     menu.select_callback = _main_menu_callback
     menu.extend([
         Text('Hero Wars'),
-        Text('Gold: {gold}'.format(gold=player.gold)),
-        Option(get_translation(player.lang_key, 'menus', 'buy_heroes'), 1),
-        Option(get_translation(player.lang_key, 'menus', 'owned_heroes'), 2),
-        Option(get_translation(player.lang_key, 'menus', 'current_hero'), 3),
-        Option(get_translation(player.lang_key, 'menus', 'buy_items'), 4),
-        Option(get_translation(player.lang_key, 'menus', 'sell_items'), 5),
-        Text('0. Close')
+        HwText(menu_options['Gold'], gold=player.gold),
+        SimpleOption(1, menu_options['Buy Heroes']),
+        SimpleOption(2, menu_options['Owned Heroes']),
+        SimpleOption(3, menu_options['Current Hero']),
+        SimpleOption(4, menu_options['Buy Items']),
+        SimpleOption(5, menu_options['Sell Items']),
+        SimpleOption(0, menu_options['Close'], highlight=False)
     ])
-    return menu
 
+    return menu
 
 def _main_menu_callback(menu, _, choice):
     """Main menu callback."""
 
-    if choice.value == 1:
+    if choice.choice_index == 1:
         buy_hero_menu(menu.player).send(menu.player.index)
-    elif choice.value == 2:
+    elif choice.choice_index == 2:
         owned_heroes_menu(menu.player).send(menu.player.index)
-    elif choice.value == 3:
+    elif choice.choice_index == 3:
         current_hero_info_menu(
             menu.player, 
             return_to_main_menu=True
         ).send(menu.player.index)
-    elif choice.value == 4:
+    elif choice.choice_index == 4:
         item_categories_menu(menu.player).send(menu.player.index)
-    elif choice.value == 5:
+    elif choice.choice_index == 5:
         sell_items_menu(menu.player).send(menu.player.index)
 
 
@@ -207,11 +318,11 @@ def buy_hero_menu(player):
     """
 
     menu = HwPagedMenu(
-        title=get_translation(player.lang_key, 'menus', 'buy_heroes'), 
+        title=menu_options['Buy Heroes'], 
         select_callback=_buy_hero_menu_callback
     )
     menu.player = player
-    menu.option8 = Option('Back', main_menu)
+    menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     # Get all heroes not owned by player
     heroes = (
@@ -231,12 +342,7 @@ def buy_hero_menu(player):
         ))
 
     if not menu:
-        SayText2(message=get_prefixed_translation(
-            player.lang_key, 
-            'menu_messages', 
-            'no_heroes_to_buy'
-        )).send(player.index)
-
+        menu_messages['No Heroes To Buy'].send(player.index)
         menu = menu.option8.value(player)  # Refresh
 
     return menu
@@ -262,11 +368,11 @@ def item_categories_menu(player):
     with items of chosen category in it.
     """
     menu = HwPagedMenu(
-        title=get_translation(player.lang_key, 'menus', 'item_categories'), 
+        title=menu_options['Item Categories'], 
         select_callback=_item_categories_menu_callback
     )
     menu.player = player
-    menu.option8 = Option('Back', main_menu)
+    menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     items = (
         item for item in Item.get_subclasses()
@@ -285,11 +391,7 @@ def item_categories_menu(player):
         menu.append(Option(category, category))
 
     if not menu:
-        SayText2(message=get_prefixed_translation(
-            player.lang_key,
-            'menu_messages', 
-            'no_items_to_buy'
-        )).send(player.index)
+        menu_messages['No Items To Buy'].send(player.index)
         menu = menu.option8.value(player)  # Refresh
 
     return menu
@@ -313,11 +415,11 @@ def buy_items_menu(player, chosen_category='Default'):
     """
 
     menu = HwPagedMenu(
-        title=get_translation(player.lang_key, 'menus', 'buy_items'), 
+        title=menu_options['Buy Items'], 
         select_callback=_buy_items_menu_callback
     )
     menu.player = player
-    menu.option8 = Option('Back', item_categories_menu)
+    menu.option8 = HwOption(menu_options['Back'], item_categories_menu, player=player)
     menu.chosen_category = chosen_category
 
     items = (
@@ -339,11 +441,7 @@ def buy_items_menu(player, chosen_category='Default'):
             ))
 
     if not menu:
-        SayText2(message=get_prefixed_translation(
-            player.lang_key, 
-            'menu_messages', 
-            'no_items_to_buy'
-        )).send(player.index)
+        menu_messages['No Items To Buy'].send(player.index)
         menu = menu.option8.value(player)  # Refresh
     
     return menu
@@ -360,13 +458,11 @@ def _buy_items_menu_callback(menu, _, choice):
 
     # Check if player can buy the item
     if menu.player.cash < item_cls.cost:
-        translation = get_prefixed_translation(
-            menu.player.lang_key, 'menu_messages', 'not_enough_cash')
-
-        SayText2(message=translation.format(
+        menu_messages['Not Enough Cash'].send(
+            menu.player.index, 
             cash=menu.player.cash, 
             cost=item_cls.cost
-        )).send(menu.player.index)
+        )
 
         # Refresh
         menu.close()
@@ -375,13 +471,12 @@ def _buy_items_menu_callback(menu, _, choice):
     # Buy the item
     menu.player.cash -= item_cls.cost
     menu.player.hero.items.append(item_cls())
-    translation = get_prefixed_translation(
-        menu.player.lang_key, 'menu_messages', 'bought_item')
 
-    SayText2(message=translation.format(
-        name=item_cls.name, 
+    menu_messages['Bought Item'].send(
+        menu.player.index,
+        name=item_cls.name,
         cost=item_cls.cost
-    )).send(menu.player.index)
+    )
 
     # Refresh
     menu.close()
@@ -400,11 +495,11 @@ def owned_heroes_menu(player):
     """
 
     menu = HwPagedMenu(
-        title=get_translation(player.lang_key, 'menus', 'owned_heroes'), 
+        title=menu_options['Owned Heroes'], 
         select_callback=_owned_heroes_menu_callback
     )
     menu.player = player
-    menu.option8 = Option('Back', main_menu)
+    menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     # Add all player's heroes to the menu
     for hero in player.heroes:
@@ -419,11 +514,7 @@ def owned_heroes_menu(player):
         )
 
     if not menu:
-        SayText2(message=get_prefixed_translation(
-            player.lang_key, 
-            'menu_messages', 
-            'no_owned_heroes'
-        )).send(player.index)
+        menu_messages['No Owned Heroes'].send(player.index)
         menu = menu.option8.value(player.index)  # Refresh
 
     return menu
@@ -450,11 +541,11 @@ def sell_items_menu(player):
     """
 
     menu = HwPagedMenu(
-        title=get_translation(player.lang_key, 'menus', 'sell_items'), 
+        title=menu_options['Sell Items'], 
         select_callback=_sell_items_menu_callback
     )
     menu.player = player
-    menu.option8 = Option('Back', main_menu)
+    menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     # Add all hero's items into the menu
     for item in player.hero.items:
@@ -466,11 +557,7 @@ def sell_items_menu(player):
         ))
 
     if not menu:
-        SayText2(message=get_prefixed_translation(
-            player.lang_key, 
-            'menu_messages', 
-            'no_owned_items'
-        )).send(player.index)
+        menu_messages['No Owned Items'].send(player.index)
         menu = menu.option8.value(player)  # Refresh
     
     return menu
@@ -486,13 +573,11 @@ def _sell_items_menu_callback(menu, _, choice):
     menu.player.hero.items.remove(item)
     menu.player.cash += item.sell_value
 
-    translation = get_prefixed_translation(
-        menu.player.lang_key, 'menu_messages', 'sold_item')
-
-    SayText2(message=translation.format(
-        name=item.name, 
+    menu_messages['Sold Item'].send(
+        menu.player.index,
+        name=item.name,
         cost=item.cost
-    )).send(menu.player.index)
+    )
 
     # Refresh
     menu.close()
@@ -521,9 +606,8 @@ def hero_info_menu(player, hero_cls=None):
     )
     menu.page_info = False
     menu.selected_hero = hero_cls  # Callback needs to know the hero
-    menu.option7 = Option(get_translation(
-        player.lang_key, 'menus', 'option_buy'), _buy_hero)
-    menu.option8 = Option('Back', buy_hero_menu)
+    menu.option7 = Option(menu_options['Buy'], _buy_hero)
+    menu.option8 = HwOption(menu_options['Back'], buy_hero_menu, player=player)
 
     # Add all hero's skills and descriptions to the menu
     for skill in hero_cls.skill_set:
@@ -557,12 +641,11 @@ def _buy_hero(menu, _, choice):
 
     # Check if player cannot buy the hero
     if menu.player.gold < hero.cost:
-            translation = get_prefixed_translation(
-                menu.player.lang_key, 'menu_messages', 'not_enough_gold')
-            SayText2(message=translation.format(
-                name=hero.name, 
+            menu_messages['Not Enough Gold'].send(
+                menu.player.index,
+                name=hero.name,
                 cost=hero.cost
-            )).send(menu.player.index)
+            )
             
             # Refresh
             menu.close()
@@ -575,12 +658,12 @@ def _buy_hero(menu, _, choice):
 
     # Change the hero automatically
     menu.player.hero = hero
-    translation = get_prefixed_translation(
-        menu.player.lang_key, 'menu_messages', 'bought_hero')
-    SayText2(message=translation.format(
-        name=hero.name, 
+
+    menu_messages['Bough Hero'].send(
+        menu.player.index,
+        name=hero.name,
         cost=hero.cost
-    )).send(menu.player.index)
+    )
 
 
 def _hero_info_menu_callback(menu, _, choice):
@@ -614,9 +697,8 @@ def owned_hero_info_menu(player, hero=None):
     )
     menu.page_info = False
     menu.selected_hero = hero  # Callback needs to know the hero
-    menu.option7 = Option(get_translation(
-        player.lang_key, 'menus', 'option_change'), _change_hero)
-    menu.option8 = Option('Back', owned_heroes_menu)
+    menu.option7 = Option(menu_options['Change'], _change_hero)
+    menu.option8 = HwOption(menu_options['Back'], owned_heroes_menu, player=player)
 
     # Add all the hero's skills, their levels and descriptions to the menu
     for skill in hero.skills:
@@ -652,9 +734,7 @@ def _change_hero(menu, _, choice):
     """ 
     hero = menu.selected_hero
     menu.player.hero = hero
-    translation = get_prefixed_translation(
-        menu.player.lang_key, 'menu_messages', 'changed_hero')
-    SayText2(message=translation.format(name=hero.name)).send(menu.player.index)
+    menu_messages['Changed Hero'].send(menu.player.index, name=hero.name)
 
 
 def _owned_hero_info_menu_callback(menu, _, choice):
@@ -667,7 +747,7 @@ def _owned_hero_info_menu_callback(menu, _, choice):
 
 
 # ======================================================================
-# >> OWNED HEROINFO -MENU
+# >> CURRENT HEROINFO -MENU
 # ======================================================================
 
 def current_hero_info_menu(player, return_to_main_menu=False):
@@ -690,18 +770,18 @@ def current_hero_info_menu(player, return_to_main_menu=False):
     )
     menu.page_info = False
 
-    menu.option7 = Option(get_translation(
-        player.lang_key, 'menus', 'reset_skill_points'), _reset_skill_points)
+    menu.option7 = Option(
+        menu_options['Reset Skill Points'], 
+        _reset_skill_points
+    )
 
     if return_to_main_menu: 
-        menu.option8 = Option('Back', main_menu)
+        menu.option8 = HwOption(menu_options['Back'], main_menu, player=player)
 
     # Override the bottom seperator to display available skill points
-    translation = get_translation(
-        player.lang_key, 'menus', 'available_skill_points')
     menu.bottom_seperator = (
         menu.bottom_seperator + '\n' +
-        translation.format(skill_points=player.hero.skill_points)
+        'SP: {0}'.format(player.hero.skill_points)
         + '\n' + menu.bottom_seperator
     )
 
@@ -728,12 +808,7 @@ def _reset_skill_points(menu, _, choice):
 
     If option 7 was selected, reset skill points and refresh the menu.
     """
-
-    SayText2(message=get_prefixed_translation(
-        menu.player.lang_key, 
-        'menu_messages', 
-        'skill_points_reset'
-    )).send(menu.player.index)
+    menu_messages['Skill Points Reset'].send(menu.player.index)
 
     for skill in menu.player.hero.skills:
         skill.level = 0
@@ -756,44 +831,29 @@ def _current_hero_info_menu_callback(menu, _, choice):
     skill = choice.value
 
     if menu.player.hero.level < skill.required_level:
-        translation = get_prefixed_translation(
-            menu.player.lang_key, 
-            'menu_messages', 
-            'not_required_level'
-        ).format(
-            current_level=menu.player.hero.level,
-            required_level=skill.required_level
+        menu_messages['Not Required Level'].send(
+            menu.player.index,
+            current=menu.player.hero.level,
+            required=skill.required_level
         )
 
     elif skill.level >= skill.max_level:
-        translation = get_translation(
-            menu.player.lang_key, 
-            'menu_messages', 
-            'skill_maxed_out'
-        )
+        menu_messages['Skill Maxed Out'].send(menu.player.index)
 
     elif menu.player.hero.skill_points < skill.cost:
-        translation = get_prefixed_translation(
-            menu.player.lang_key, 
-            'menu_messages', 
-            'not_enough_skill_points'
-        ).format(
+        menu_messages['Not Enough Skill Points'].send(
+            menu.player.index,
             skill_points=menu.player.hero.skill_points,
             cost=skill.cost
         )
 
     else:  # Everything went good
         skill.level += 1
-        translation = get_prefixed_translation(
-            menu.player.lang_key, 
-            'menu_messages', 
-            'skill_leveled'
-        ).format(
+        menu_messages['Skill Leveled'].send(
+            menu.player.index,
             name=skill.name, 
             level=skill.level
         )
-
-    SayText2(message=translation).send(menu.player.index)
 
     refresh = False
     # Calculate if player can still use skill points
@@ -812,5 +872,203 @@ def _current_hero_info_menu_callback(menu, _, choice):
             menu.player, 
             menu.return_to_main_menu
         ).send(menu.player.index)
+
+
+# ======================================================================
+# >> ADMIN MAIN MENU
+# ======================================================================
+
+def admin_menu(player):
+    """Main admin menu.
+
+    Privately accessed menu for specified steamid's only.
+    Includes Hero Wars admin functions.
+    """
+
+    menu = SimpleMenu()
+    menu.player = player
+    menu.select_callback = _admin_callback
+
+    menu.extend([
+        Text('Hero Wars - Admin'),
+        SimpleOption(1, 'Manage players'),
+        Text('0. Close')
+    ])
+
+    return menu
+
+
+def _admin_callback(menu, _, choice):
+    """Admin menu callback.
+
+    Sends the correct sub-menu depending on chosen
+    admin function.
+    """
+
+    if choice.choice_index == 1:
+        player_pick_menu(
+            menu.player,
+            _admin_player_pick_callback, 
+            admin_menu
+        ).send(menu.player.index)
+
+
+def _admin_player_pick_callback(menu, _, choice):
+    """Callback function for admin player management.
+
+    Sends the settings page for chosen player
+    """
+    admin_player_settings_menu(menu.player, choice.value).send(
+        menu.player.index
+    )
+
+
+# ======================================================================
+# >> GENERAL PLAYER PICK MENU
+# ======================================================================
+
+def player_pick_menu(player, callback_function, previous_menu=None):
+    """Menu for picking a player.
+
+    Menu with all the server's players as options.
+    Choosing a player will execute the callback_function.
+    """
+
+    menu = HwPagedMenu(select_callback=callback_function)
+    menu.player = player
+    menu.title = 'Choose a player'
+
+    # If previous menu was set, use the custom back button
+    if previous_menu:
+        menu.option8 = HwOption(menu_options['Back'], previous_menu, player=player)
+
+    # Add all players into the menu
+    for player in players:
+        menu.append(Option(player.name, player))
+    
+    return menu
+
+
+# ======================================================================
+# >> ADMIN PLAYER SETTINGS MENU
+# ======================================================================
+
+def admin_player_settings_menu(player, chosen_player):
+    """Player specific options for admins.
+
+    Provides options for controlling the chosen player.
+    Allows giving of different attributes.
+    In future may include resetting attributes,
+    changing hero etc.
+    """
+
+    menu = HwPagedMenu(select_callback=_admin_player_settings_callback)
+    menu.player = player
+    menu.chosen_player = chosen_player
+    menu.title = '{name}\n{hero_name} ({hero_level}) \n'.format(
+        name=chosen_player.name,
+        hero_name=chosen_player.hero.name,
+        hero_level=chosen_player.hero.level
+    )
+    menu.page_info = False
+    menu.top_seperator = '-'*30
+
+    menu.option8 = HwOption(
+        'Back', 
+        player_pick_menu, 
+        player=player, 
+        callback_function=_admin_player_pick_callback, 
+        previous_menu=admin_menu
+    )
+    
+    menu.extend([
+        Option('Give Exp', 'exp'),
+        Option('Give Level', 'level'),
+        Option('Give Cash', 'cash'),
+        Option('Give Gold', 'gold')
+    ])
+    return menu
+
+
+def _admin_player_settings_callback(menu, _, choice):
+    """Admin player settings menu callback.
+
+    Executes the chosens function on the player.
+    """
+
+    admin_give_amount_menu(
+        menu.player, 
+        menu.chosen_player, 
+        choice.value
+    ).send(menu.player.index)
+ 
+
+# ======================================================================
+# >> ADMIN GIVE AMOUNT MENU
+# ======================================================================
+
+def admin_give_amount_menu(player, chosen_player, chosen_attr):
+    """Choose the amount of chosen attribute to give to chosen player.
+
+    Chosen_values is a tuple (object, attribute) that will
+    get boosted by the amount chosen in this menu.
+    """
+
+    menu = HwPagedMenu(select_callback=_admin_give_amount_callback)
+    menu.player = player
+    menu.chosen_player = chosen_player
+    menu.chosen_attr = chosen_attr
+
+    # Pick the right object
+    if (not hasattr(chosen_player, chosen_attr) and 
+            hasattr(chosen_player.hero, chosen_attr)):
+        menu.chosen_object = chosen_player.hero
+    else:
+        menu.chosen_object = chosen_player
+
+    menu.option8 = HwOption(
+        'Back', 
+        admin_player_settings_menu, 
+        player=player, 
+        chosen_player=menu.chosen_player
+    )
+
+    menu.title = 'Pick an amount'
+
+    menu.extend([
+        Option('1', 1),
+        Option('5', 5),
+        Option('10', 10),
+        Option('50', 50),
+        Option('100', 100),
+        Option('500', 500),
+        Option('1 000', 1000),
+        Option('5 000', 5000),
+        Option('10 000', 10000)
+    ])
+
+    return menu
+
+def _admin_give_amount_callback(menu, _, choice):
+    """Admin give amount menu callback.
+
+    Gives the chosen amount of chosen attribute to the
+    chosen player.
+    """
+
+    setattr(menu.chosen_object, menu.chosen_attr, 
+        getattr(
+            menu.chosen_object, 
+            menu.chosen_attr
+        )+choice.value
+    )
+
+    menu.close()
+    admin_give_amount_menu(
+        menu.player, 
+        menu.chosen_player, 
+        menu.chosen_attr
+    ).send(menu.player.index)
+
 
 

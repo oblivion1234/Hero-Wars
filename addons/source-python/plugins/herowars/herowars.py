@@ -17,6 +17,7 @@ from herowars.tools import find_element
 from herowars.tools import get_messages
 
 from herowars.menus import main_menu
+from herowars.menus import admin_menu
 
 from herowars.heroes import *
 from herowars.items import *
@@ -63,7 +64,7 @@ info.convar = PublicConVar(
 # >> TRANSLATIONS
 # ======================================================================
 
-exp_messages = get_messages(LangStrings('herowars/messages'))
+exp_messages = get_messages(LangStrings('herowars/exp_messages'))
 gold_messages = get_messages(LangStrings('herowars/gold_messages'))
 other_messages = get_messages(LangStrings('herowars/other_messages'))
 
@@ -318,6 +319,9 @@ def player_say(game_event):
     # If the text was '!hw' or '!herowars', open main menu
     elif text2 in ('hw', 'herowars'):
         main_menu(player).send(player.index)
+
+    elif text2 == 'hwadmin':
+        admin_menu(player).send(player.index)
 
     # Finally, execute hero's on_say skills
     player.hero.execute_skills('on_say', player=player, text=text)
