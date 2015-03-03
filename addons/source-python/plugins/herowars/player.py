@@ -14,9 +14,6 @@ from herowars.tools import find_element
 
 from herowars.configs import database_path
 from herowars.configs import starting_heroes
-from herowars.configs import default_lang_key
-
-from herowars.translations import get_prefixed_translation
 
 # Source.Python
 from players.entity import PlayerEntity
@@ -146,7 +143,6 @@ class _Player(PlayerEntity):
         self._gold = 0
         self._hero = None
         self.heroes = []
-        self.lang_key = default_lang_key
 
     @property
     def gold(self):

@@ -15,14 +15,12 @@ from herowars.entities import Hero
 
 from herowars.tools import find_element
 
-from herowars.translations import get_prefixed_translation
-
 from herowars.menus import main_menu
+
+from herowars.translation import get_messages
 
 from herowars.heroes import *
 from herowars.items import *
-
-import herowars.commandlib as cmdlib
 
 import herowars.configs as cfg
 
@@ -61,6 +59,15 @@ info.convar = PublicConVar(
 
 
 # ======================================================================
+# >> TRANSLATIONS
+# ======================================================================
+
+exp_messages = get_messages('exp_messages')
+gold_messages = get_messages('gold_messages')
+other_messages = get_messages('other_messages')
+
+
+# ======================================================================
 # >> FUNCTIONS
 # ======================================================================
 
@@ -88,10 +95,7 @@ def load():
     engine_server.server_command('mp_restartgame 1\n')
 
     # Send a message to everyone
-    tr = get_prefixed_translation(
-        cfg.default_lang_key, 'other', 'plugin_loaded'
-    )
-    SayText2(message=tr).send()
+    other_messages['Plugin Loaded'].send()
 
 
 def unload():
@@ -102,10 +106,7 @@ def unload():
         save_player_data(cfg.database_path, player)
 
     # Send a message to everyone
-    tr = get_prefixed_translation(
-        cfg.default_lang_key, 'other', 'plugin_unloaded'
-    )
-    SayText2(message=tr).send()
+    other_messages['Plugin Unloaded'].send()
 
 
 def give_gold(player, gold_key):
@@ -121,8 +122,7 @@ def give_gold(player, gold_key):
     gold = cfg.gold_values.get(gold_key, 0)
     if gold > 0:
         player.gold += gold
-        tr = get_prefixed_translation(player.lang_key, 'gold', gold_key)
-        cmdlib.tell(player, tr.format(gold=gold))
+        gold_messages[gold_key].send(player.index, gold=gold)
 
 
 def give_exp(player, exp_key):
@@ -136,8 +136,7 @@ def give_exp(player, exp_key):
     exp = cfg.exp_values.get(exp_key, 0)
     if exp > 0:
         player.hero.exp += exp
-        tr = get_prefixed_translation(player.lang_key, 'exp', exp_key)
-        cmdlib.tell(player, tr.format(exp=exp))
+        exp_messages[exp_key].send(player.index, exp=exp)
 
 
 def give_team_exp(player, exp_key):
@@ -191,15 +190,21 @@ def player_spawn(game_event):
         # Create a new player
         player = create_player(userid)
 
+    # Get player's hero
+    hero = player.hero
+
     # Show current exp and level
-    tr = get_prefixed_translation(player.lang_key, 'other', 'hero_status')
-    cmdlib.tell(player, tr.format(
-        name=player.hero.name, level=player.hero.level,
-        exp=player.hero.exp, max_exp=player.hero.required_exp))
+    other_messages['Hero Status'].send(
+        player.index,
+        name=hero.name,
+        level=hero.level,
+        current=hero.exp,
+        required=hero.required_exp
+    )
 
     # Execute spawn skills if the player's on a valid team
     if player.team > 1:
-        player.hero.execute_skills('on_spawn', player=player)
+        hero.execute_skills('on_spawn', player=player)
 
 
 @Event
@@ -236,14 +241,13 @@ def player_death(game_event):
         attacker.hero.execute_skills('on_kill', player=attacker, **eargs)
         defender.hero.execute_skills('on_death', player=defender, **eargs)
 
-        # Give attacker exp from kill, headshot and weapon
-        give_exp(attacker, 'kill')
+        # Give attacker exp from kill and headshot
+        give_exp(attacker, 'Kill')
         if eargs['headshot']:
-            give_exp(attacker, 'headshot')
-        give_exp(attacker, eargs['weapon'])
+            give_exp(attacker, 'Headshot')
 
         # Give attacker gold from kill
-        give_gold(attacker, 'kill')
+        give_gold(attacker, 'Kill')
 
     # If the assister exists
     if assister:
@@ -252,8 +256,8 @@ def player_death(game_event):
         assister.hero.execute_skills('on_assist', player=assister, **eargs)
 
         # Give assister exp and gold
-        give_exp(assister, 'assist')
-        give_gold(assister, 'assist')
+        give_exp(assister, 'Assist')
+        give_gold(assister, 'Assist')
 
     # Finally, remove defender's items
     for item in defender.hero.items:
@@ -333,13 +337,13 @@ def round_end(game_event):
 
         # Give player win exp and gold
         if player.get_team() == winner:
-            give_exp(player, 'round_win')
-            give_gold(player, 'round_win')
+            give_exp(player, 'Round Win')
+            give_gold(player, 'Round Win')
 
         # Or loss exp and gold
         else:
-            give_exp(player, 'round_loss')
-            give_gold(player, 'round_loss')
+            give_exp(player, 'Round Loss')
+            give_gold(player, 'Round Loss')
 
 
 @Event
@@ -347,8 +351,8 @@ def bomb_planted(game_event):
     """Give exp from bomb planting."""
 
     player = get_player(game_event.get_int('userid'))
-    give_exp(player, 'bomb_plant')
-    give_team_exp(player, 'bomb_plant_team')
+    give_exp(player, 'Bomb Plant')
+    give_team_exp(player, 'Bomb Plant Team')
 
 
 @Event
@@ -356,8 +360,8 @@ def bomb_exploded(game_event):
     """Give exp from bomb explosion."""
 
     player = get_player(game_event.get_int('userid'))
-    give_exp(player, 'bomb_explode')
-    give_team_exp(player, 'bomb_explode_team')
+    give_exp(player, 'Bomb Explode')
+    give_team_exp(player, 'Bomb Explode Team')
 
 
 @Event
@@ -365,8 +369,8 @@ def bomb_defused(game_event):
     """Give exp from bomb defusion."""
 
     player = get_player(game_event.get_int('userid'))
-    give_exp(player, 'bomb_defuse')
-    give_team_exp(player, 'bomb_defuse_team')
+    give_exp(player, 'Bomb Defuse')
+    give_team_exp(player, 'Bomb Defuse Team')
 
 
 @Event
@@ -374,8 +378,8 @@ def hostage_follows(game_event):
     """Give exp from hostage pick up."""
 
     player = get_player(game_event.get_int('userid'))
-    give_exp(player, 'hostage_pick_up')
-    give_team_exp(player, 'hostage_pick_up_team')
+    give_exp(player, 'Hostage Pick Up')
+    give_team_exp(player, 'Hostage Pick Up Team')
 
 
 @Event
@@ -383,5 +387,5 @@ def hostage_rescued(game_event):
     """Give exp from hostage rescue."""
 
     player = get_player(game_event.get_int('userid'))
-    give_exp(player, 'hostage_rescue')
-    give_team_exp(player, 'hostage_rescue_team')
+    give_exp(player, 'Hostage Rescue')
+    give_team_exp(player, 'Hostage Rescue Team')
