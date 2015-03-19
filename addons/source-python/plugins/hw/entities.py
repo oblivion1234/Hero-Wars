@@ -2,19 +2,16 @@
 # >> IMPORTS
 # ======================================================================
 
-# Hero Wars
-from herowars.tools import get_subclasses
-from herowars.tools import classproperty
+# Hero-Wars
+from hw.tools import get_subclasses
+from hw.tools import classproperty
 
-from herowars.configs import default_hero_category
-from herowars.configs import default_item_category
-from herowars.configs import item_sell_value_multiplier
-from herowars.configs import exp_algorithm
+from hw.configs import default_hero_category
+from hw.configs import default_item_category
+from hw.configs import item_sell_value_multiplier
+from hw.configs import exp_algorithm
 
-from herowars.events import Pre_Hero_Level_Up
-
-# Source.Python
-from listeners.tick.repeat import TickRepeat
+from hw.events import Hero_Pre_Level_Up
 
 
 # ======================================================================
@@ -35,14 +32,14 @@ __all___ = (
 # ======================================================================
 
 class Entity(object):
-    """The base element of Hero Wars.
+    """The base element of Hero-Wars.
 
-    Entity is a base class for most of the Hero Wars classes.
+    Entity is a base class for most of the Hero-Wars classes.
     It implements common properties like name and description, as well
-    as common behavior and methods for most objects in Hero Wars.
+    as common behavior and methods for most objects in Hero-Wars.
 
     Attributes:
-        level: Entity's Hero Wars level
+        level: Entity's Hero-Wars level
 
     Class Attributes:
         name: Entity's name
@@ -52,7 +49,7 @@ class Entity(object):
         max_level: Maximum level the entity can be leveled to
         enabled: Is the entity enabled on the server
         required_level: Required level before the entity can be used
-        allowed_users: A private set of users who can use the entity 
+        allowed_users: A private set of users who can use the entity
     """
 
     # Defaults
@@ -78,7 +75,7 @@ class Entity(object):
         return cls.__name__
 
     def __init__(self, level=0):
-        """Initializes a new Hero Wars entity.
+        """Initializes a new Hero-Wars entity.
 
         Args:
             level: Entity's starting level
@@ -133,7 +130,7 @@ class Entity(object):
 class Hero(Entity):
     """Heroes strenghten players, giving them a set of powerful skills.
 
-    Each hero has its own unique skill set (see herowars.core.Skill) to
+    Each hero has its own unique skill set (see hw.core.Skill) to
     spice up the game.
     Clients attempt to level up their heroes by gaining enough
     experience points (exp) until the hero levels up.
@@ -159,7 +156,7 @@ class Hero(Entity):
     category = default_hero_category
 
     def __init__(self, level=0, exp=0):
-        """Initializes a new Hero Wars hero.
+        """Initializes a new Hero-Wars hero.
 
         Args:
             level: Hero's current level
@@ -179,11 +176,11 @@ class Hero(Entity):
     @property
     def required_exp(self):
         """Calculate required experience points for a hero to level up.
-        
+
         Returns:
             Required experience points for leveling up
         """
-        
+
         if self.level >= self.max_level:
             return 0
         return exp_algorithm(self.level)
@@ -205,7 +202,7 @@ class Hero(Entity):
         self._fire_level_up_event()
 
     def _fire_level_up_event(self):
-        event = Pre_Hero_Level_Up(cls_id=self.cls_id, id=id(self))
+        event = Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self))
         event.fire()
 
     @property
@@ -331,7 +328,7 @@ class Skill(Entity):
     """Skills give custom powers and effects for heroes.
 
     Skills are what heroes use to become strong an dunique; they allow
-    more versatile gameplay for Hero Wars. Each hero has a certain skill
+    more versatile gameplay for Hero-Wars. Each hero has a certain skill
     set, and each skill gets used during a certain event or action to
     create a bonus effect, such as damaging the enemy.
     """
@@ -364,7 +361,7 @@ class Item(Skill):
 
     Each hero can equip 6 items at once, they can be bought and sold
     and some can be upgraded.
-    
+
     Class Attributes:
         permanent: Does the item stay when the hero dies
     """

@@ -2,32 +2,31 @@
 # >> IMPORTS
 # ======================================================================
 
-# Hero Wars
-from herowars.players import get_player
-from herowars.players import create_player
-from herowars.players import remove_player
-from herowars.players import player_list
+# Hero-Wars
+from hw.players import get_player
+from hw.players import create_player
+from hw.players import remove_player
+from hw.players import player_list
 
-from herowars.database import setup_database
-from herowars.database import save_player_data
+from hw.database import setup_database
+from hw.database import save_player_data
 
-from herowars.entities import Hero
+from hw.entities import Hero
 
-from herowars.events import Hero_Level_Up
+from hw.events import Hero_Level_Up
+from hw.events import Player_Ultimate
 
-from herowars.tools import find_element
-from herowars.tools import get_messages
+from hw.tools import find_element
+from hw.tools import get_messages
 
-from herowars.menus import main_menu
-from herowars.menus import admin_menu
-from herowars.menus import current_hero_info_menu
+from hw.menus import menus
 
-from herowars.heroes import *
-from herowars.items import *
+from hw.heroes import *
+from hw.items import *
 
-import herowars.configs as cfg
+import hw.configs as cfg
 
-# Source.Python 
+# Source.Python
 from events import Event
 
 from filters.players import PlayerIter
@@ -38,38 +37,33 @@ from cvars.public import PublicConVar
 
 from plugins.info import PluginInfo
 
-from messages import SayText2
-
 from translations.strings import LangStrings
 
 
 # ======================================================================
-# >> PLUGIN INFO
+# >> GLOBALS
 # ======================================================================
 
+# Plugin info
 info = PluginInfo()
-info.name = 'Hero Wars'
+info.name = 'Hero-Wars'
 info.author = 'Mahi, Kamiqawa'
 info.version = '0.4.5'
-info.basename = 'herowars'
+info.basename = 'hw'
 info.variable = "{0}_version".format(info.basename)
 
-# Public variable
+# Public variable for plugin info
 info.convar = PublicConVar(
-    info.variable, 
-    info.version, 
-    0, 
+    info.variable,
+    info.version,
+    0,
     "{0} Version".format(info.name)
 )
 
-
-# ======================================================================
-# >> TRANSLATIONS
-# ======================================================================
-
-exp_messages = get_messages(LangStrings('herowars/exp'))
-gold_messages = get_messages(LangStrings('herowars/gold'))
-other_messages = get_messages(LangStrings('herowars/other'))
+# Translation messages
+exp_messages = get_messages(LangStrings('hw/exp'))
+gold_messages = get_messages(LangStrings('hw/gold'))
+other_messages = get_messages(LangStrings('hw/other'))
 
 
 # ======================================================================
@@ -77,7 +71,7 @@ other_messages = get_messages(LangStrings('herowars/other'))
 # ======================================================================
 
 def load():
-    """Setups the database upon Hero Wars loading.
+    """Setups the database upon Hero-Wars loading.
 
     Makes sure there are heroes on the server, restarts the game
     and setups the database file.
@@ -165,9 +159,10 @@ def give_team_exp(player, exp_key):
 # ======================================================================
 
 @Event
-def pre_hero_level_up(game_event):
+def hero_pre_level_up(game_event):
     """Fetches the player and raises the Hero_Level_Up event."""
 
+    # Raise hero_level_up event
     hero_id = game_event.get_int('id')
     owner = None
     for player in player_list:
@@ -175,21 +170,23 @@ def pre_hero_level_up(game_event):
             owner = player
             break
     if owner:
-        hero_level_up_event = Hero_Level_Up(
+        Hero_Level_Up(
             cls_id=game_event.get_string('cls_id'),
             id=hero_id,
             player_index=owner.index,
-            player_userid=owner.userid 
-        )
-        hero_level_up_event.fire()
+            player_userid=owner.userid
+        ).fire()
 
 
 @Event
 def hero_level_up(game_event):
     """Sends hero's status to player and opens current hero menu."""
 
+    # Get the player and his hero
     player = get_player(game_event.get_int('player_userid'))
     hero = player.hero
+
+    # Send hero's status via chat
     other_messages['Hero Status'].send(
         player.index,
         name=hero.name,
@@ -197,7 +194,23 @@ def hero_level_up(game_event):
         current=hero.exp,
         required=hero.required_exp
     )
-    current_hero_info_menu(player).send(player.index)
+
+    # Open current hero info menu (Kamiqawa, what?) to let the player
+    # spend skill points
+    menus['Current Hero'].send(player.index)
+
+    # Execute player_level_up skills
+    player.hero.execute_skills('player_level_up', player=player, hero=hero)
+
+
+@Event
+def player_ultimate(game_event):
+    """Executes ultimate skills."""
+
+    userid = game_event.get_int('userid')
+    player = get_player(userid)
+    player.hero.execute_skills(
+        'player_ultimate', player=player)
 
 
 @Event
@@ -245,7 +258,7 @@ def player_spawn(game_event):
 
     # Execute spawn skills if the player's on a valid team
     if player.team > 1:
-        hero.execute_skills('on_spawn', player=player)
+        hero.execute_skills('player_spawn', player=player)
 
 
 @Event
@@ -273,14 +286,14 @@ def player_death(game_event):
 
         # Execute suicide skills
         defender.hero.execute_skills(
-            'on_suicide', player=defender, **eargs)
+            'player_suicide', player=defender, **eargs)
 
     # If it wasn't...
     else:
 
         # Execute kill and death skills
-        attacker.hero.execute_skills('on_kill', player=attacker, **eargs)
-        defender.hero.execute_skills('on_death', player=defender, **eargs)
+        attacker.hero.execute_skills('player_kill', player=attacker, **eargs)
+        defender.hero.execute_skills('player_death', player=defender, **eargs)
 
         # Give attacker exp from kill and headshot
         give_exp(attacker, 'Kill')
@@ -294,7 +307,7 @@ def player_death(game_event):
     if assister:
 
         # Execute assist skills
-        assister.hero.execute_skills('on_assist', player=assister, **eargs)
+        assister.hero.execute_skills('player_assist', player=assister, **eargs)
 
         # Give assister exp and gold
         give_exp(assister, 'Assist')
@@ -324,8 +337,8 @@ def player_hurt(game_event):
     }
 
     # Execute attack and defend skills
-    attacker.hero.execute_skills('on_attack', player=attacker, **eargs)
-    defender.hero.execute_skills('on_defend', player=defender, **eargs)
+    attacker.hero.execute_skills('player_attack', player=attacker, **eargs)
+    defender.hero.execute_skills('player_defend', player=defender, **eargs)
 
 
 @Event
@@ -333,7 +346,7 @@ def player_jump(game_event):
     """Executes jump skills."""
 
     player = get_player(game_event.get_int('userid'))
-    player.hero.execute_skills('on_jump', player=player)
+    player.hero.execute_skills('player_jump', player=player)
 
 
 @Event
@@ -353,18 +366,18 @@ def player_say(game_event):
 
     # If the text was '!ultimate', execute ultimate skills
     if text2 == 'ultimate':
-        player.hero.execute_skills('on_ultimate', player=player)
+        Player_Ultimate(
+            player_index=owner.index,
+            player_userid=owner.userid
+        ).fire()
 
-    # If the text was '!hw' or '!herowars', open main menu
-    elif text2 in ('hw', 'herowars'):
-        main_menu(player).send(player.index)
+    # If the text was '!hw' or '!hw', open Main menu
+    elif text2 in ('hw', 'hw'):
+        menus['Main'].send(player.index)
 
-    elif text2 == 'hwadmin':
-        admin_menu(player).send(player.index)
+    # Finally, execute hero's player_say skills
+    player.hero.execute_skills('player_say', player=player, text=text)
 
-    # Finally, execute hero's on_say skills
-    player.hero.execute_skills('on_say', player=player, text=text)
-        
 
 @Event
 def round_end(game_event):

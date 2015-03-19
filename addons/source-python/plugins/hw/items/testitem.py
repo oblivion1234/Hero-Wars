@@ -5,10 +5,8 @@
 # Python
 from random import randint
 
-# Hero Wars
-from herowars.entities import Item
-
-import herowars.commandlib as cmdlib
+# Hero-Wars
+from hw.entities import Item
 
 
 # ======================================================================
@@ -25,8 +23,4 @@ class ExpBoost(Item):
     def on_spawn(self, player, **eargs):
         amount = randint(1, 15)
         player.hero.exp += amount
-        cmdlib.tell(
-            player, 
-            'ExpBoost granted you {amount} extra experience.'.format(
-                amount=amount
-            ))
+        player.tell('ExpBoost granted you {0} exp.'.format(amount))

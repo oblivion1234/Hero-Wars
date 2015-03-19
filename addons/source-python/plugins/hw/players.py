@@ -2,22 +2,22 @@
 # >> IMPORTS
 # ======================================================================
 
-# Hero Wars
-from herowars.database import load_player_data
-from herowars.database import save_player_data
-from herowars.database import load_hero_data
-from herowars.database import save_hero_data
+# Hero-Wars
+from hw.database import load_player_data
+from hw.database import save_player_data
+from hw.database import save_hero_data
 
-from herowars.entities import Hero
+from hw.entities import Hero
 
-from herowars.tools import find_element
+from hw.tools import find_element
 
-from herowars.configs import database_path
-from herowars.configs import starting_heroes
+from hw.configs import database_path
+from hw.configs import starting_heroes
+
+# Custom packages
+import xtend
 
 # Source.Python
-from players.entity import PlayerEntity
-
 from players.helpers import index_from_userid
 
 
@@ -119,22 +119,22 @@ def remove_player(userid):
 # >> CLASSES
 # ======================================================================
 
-class _Player(PlayerEntity):
-    """Player class for Hero Wars related activity.
+class _Player(xtend.PlayerEntity):
+    """Player class for Hero-Wars related activity.
 
     Player extends Source.Python's PlayerEntity, implementing player
-    sided properties for Hero Wars related information.
+    sided properties for Hero-Wars related information.
     Adds methods such as burn, freeze and push.
 
     Attributes:
-        gold: Player's Hero Wars gold, used to purchase heroes and items
+        gold: Player's Hero-Wars gold, used to purchase heroes and items
         hero: Player's hero currently in use
         heroes: List of owned heroes
         lang_key: Language key used to display messages and menus
     """
 
     def __init__(self, index):
-        """Creates a new Hero Wars player.
+        """Creates a new Hero-Wars player.
 
         Args:
             index: Player's index
@@ -146,7 +146,7 @@ class _Player(PlayerEntity):
 
     @property
     def gold(self):
-        """Getter for player's Hero Wars gold.
+        """Getter for player's Hero-Wars gold.
 
         Returns:
             Player's gold
@@ -156,7 +156,7 @@ class _Player(PlayerEntity):
 
     @gold.setter
     def gold(self, gold):
-        """Setter for player's Hero Wars gold.
+        """Setter for player's Hero-Wars gold.
 
         Raises:
             ValueError: If gold is set to a negative value
@@ -185,7 +185,7 @@ class _Player(PlayerEntity):
 
         Args:
             hero: Hero to switch to
-        
+
         Raises:
             ValueError: Hero not owned by the player
         """

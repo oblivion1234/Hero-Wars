@@ -47,6 +47,20 @@ def get_messages(lang_strings):
     return {key: SayText2(message=lang_strings[key]) for key in lang_strings}
 
 
+def apply_tokens(translation_strings, **tokens):
+    """Applies tokens to a TranslationStrings object.
+
+    Args:
+        translation_strings: TranslationStrings object to add tokens to
+        tokens: Dict of tokens to apply
+
+    Returns:
+        Updated TranslationStrings with new tokens applied
+    """
+
+    translation_strings.tokens.update(tokens)
+    return translation_strings
+
 
 def find_element(iterable, attr_name, attr_value):
     """Finds an element from an iterable by an attribute.

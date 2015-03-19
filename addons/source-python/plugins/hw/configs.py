@@ -14,8 +14,8 @@ import os
 chat_command_prefix = '!'
 
 
-# (Relative) path to database file used by Hero Wars
-database_path = os.path.dirname(__file__) + '/herowars.db'
+# (Relative) path to database file used by Hero-Wars
+database_path = os.path.dirname(__file__) + '/hw.db'
 
 
 # Amounts of experience points gained from objectives
@@ -25,7 +25,7 @@ exp_values = {
     'Kill': 30,
     'Headshot': 15,
     'Assist': 15,
-    
+
     # Round values
     'Round Win': 30,
     'Round Loss': 15,

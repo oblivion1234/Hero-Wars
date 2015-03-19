@@ -2,10 +2,10 @@
 # >> IMPORTS
 # ======================================================================
 
-# Hero Wars
-from herowars.entities import Hero
+# Hero-Wars
+from hw.entities import Hero
 
-from herowars.tools import find_element
+from hw.tools import find_element
 
 # Python
 import sqlite3
@@ -122,7 +122,7 @@ def load_player_data(database_file, player):
         )
         for cls_id, level, exp in cursor.fetchall():
             hero_cls = find_element(heroes, 'cls_id', cls_id)
-            if hero_cls: 
+            if hero_cls:
                 hero = hero_cls(level, exp)
                 load_hero_data(database_file, player.steamid, hero)
                 player.heroes.append(hero)
