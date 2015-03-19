@@ -3,7 +3,6 @@
 # ======================================================================
 
 # Hero-Wars
-from hw.tools import apply_tokens
 from hw.tools import find_element
 
 from hw.entities import Hero
@@ -64,8 +63,7 @@ def _current_hero_build_callback(menu, player_index):
 
     # Set menu's base attributes
     menu.title = hero.name
-    menu.description = apply_tokens(
-        _TR['menus']['Description'],
+    menu.description = _TR['menus']['Description'].get_string(
         level=hero.level,
         skill_points=hero.skill_points
     )
@@ -105,8 +103,7 @@ def _current_hero_build_callback(menu, player_index):
         # If the hero hasn't reached skill's required level
         elif skill.required_level > hero.level:
             info += ' ({0})'.format(_translate_text(
-                apply_tokens(
-                    _TR['menus']['Required'],
+                _TR['menus']['Required'].get_string(
                     required=skill.required_level
                 ),
                 player_index
@@ -116,7 +113,7 @@ def _current_hero_build_callback(menu, player_index):
         # If skill costs more than one, show the cost
         elif skill.cost > 1:
             info += ' ({0})'.format(_translate_text(
-                apply_tokens(_TR['menus']['Cost'], cost=skill.cost),
+                _TR['menus']['Cost'].get_string(cost=skill.cost),
                 player_index
             ))
 
@@ -204,9 +201,7 @@ def _buy_heroes_build_callback(menu, player_index):
             '{0} ({1})'.format(
                 hero_cls.name,
                 _translate_text(
-                    apply_tokens(
-                        _TR['menus']['Cost'], cost=hero_cls.cost
-                    ),
+                    _TR['menus']['Cost'].get_string(cost=hero_cls.cost),
                     player_index
                 )
             ),
@@ -239,7 +234,7 @@ def _main_build_callback(menu, player_index):
     """Main menu's build_callback function."""
 
     player = get_player(player_index, key='index')
-    apply_tokens(menu[1].text, gold=player.gold)
+    menu[1].text.get_string(gold=player.gold)
 
 
 menus['Main'] = SimpleMenu(

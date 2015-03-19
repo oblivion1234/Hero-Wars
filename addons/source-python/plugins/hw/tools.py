@@ -47,21 +47,6 @@ def get_messages(lang_strings):
     return {key: SayText2(message=lang_strings[key]) for key in lang_strings}
 
 
-def apply_tokens(translation_strings, **tokens):
-    """Applies tokens to a TranslationStrings object.
-
-    Args:
-        translation_strings: TranslationStrings object to add tokens to
-        tokens: Dict of tokens to apply
-
-    Returns:
-        Updated TranslationStrings with new tokens applied
-    """
-
-    translation_strings.tokens.update(tokens)
-    return translation_strings
-
-
 def find_element(iterable, attr_name, attr_value):
     """Finds an element from an iterable by an attribute.
 
@@ -91,7 +76,7 @@ def find_elements(iterable, attr_name, attr_value):
     Args:
         iterable: Iterable where to seek for the elements
         attr_name: Name of the attribute to compare to
-        attr_value: Desired value of the attribute 
+        attr_value: Desired value of the attribute
 
     Returns:
         A generator of elements with matching attribute
@@ -206,7 +191,7 @@ def cooldownf(fn, message=None):
     Args:
         fn: Function to determine the cooldown of the method
         message: Optional message sent if there's still cooldown left
-    
+
     Returns:
         Decorated method with a dynamic cooldown
     """

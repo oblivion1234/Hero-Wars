@@ -23,4 +23,4 @@ class ExpBoost(Item):
     def on_spawn(self, player, **eargs):
         amount = randint(1, 15)
         player.hero.exp += amount
-        player.tell('ExpBoost granted you {0} exp.'.format(amount))
+        player.message('ExpBoost granted you {0} exp.'.format(amount))
