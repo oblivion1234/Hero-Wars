@@ -6,10 +6,10 @@
 from hw.tools import find_element
 
 from hw.entities import Hero
-
-from hw.menulib import HwPagedMenu
-
 from hw.players import get_player
+
+# Xtend
+from xtend.menus import PagedMenu
 
 # Source.Python
 from menus import SimpleMenu
@@ -26,10 +26,7 @@ from translations.strings import LangStrings
 # >> GLOBALS
 # ======================================================================
 
-_TR = {
-    'menulib': LangStrings('hw/menulib'),
-    'menus': LangStrings('hw/menus')
-}
+_TR = LangStrings('hw/menus')
 
 menus = {}
 
@@ -63,7 +60,7 @@ def _current_hero_build_callback(menu, player_index):
 
     # Set menu's base attributes
     menu.title = hero.name
-    menu.description = _TR['menus']['Description'].get_string(
+    menu.description = _TR['Description'].get_string(
         level=hero.level,
         skill_points=hero.skill_points
     )
@@ -95,7 +92,7 @@ def _current_hero_build_callback(menu, player_index):
         # If skill is already maxed out
         if skill.level >= skill.max_level:
             info = ' ({0})'.format(_translate_text(
-                _TR['menus']['Maxed'],
+                _TR['Maxed'],
                 player_index
             ))
             selectable = False
@@ -103,7 +100,7 @@ def _current_hero_build_callback(menu, player_index):
         # If the hero hasn't reached skill's required level
         elif skill.required_level > hero.level:
             info += ' ({0})'.format(_translate_text(
-                _TR['menus']['Required'].get_string(
+                _TR['Required'].get_string(
                     required=skill.required_level
                 ),
                 player_index
@@ -113,7 +110,7 @@ def _current_hero_build_callback(menu, player_index):
         # If skill costs more than one, show the cost
         elif skill.cost > 1:
             info += ' ({0})'.format(_translate_text(
-                _TR['menus']['Cost'].get_string(cost=skill.cost),
+                _TR['Cost'].get_string(cost=skill.cost),
                 player_index
             ))
 
@@ -130,10 +127,10 @@ def _current_hero_build_callback(menu, player_index):
         ))
 
 
-menus['Current Hero'] = HwPagedMenu(
+menus['Current Hero'] = PagedMenu(
     select_callback=_current_hero_select_callback,
     build_callback=_current_hero_build_callback,
-    constants={7: PagedOption(_TR['menus']['Reset Skills'], 7)},
+    constants={7: PagedOption(_TR['Reset Skills'], 7)},
     display_page_info=False
 )
 
@@ -166,8 +163,8 @@ def _owned_heroes_build_callback(menu, player_index):
         menu.append(option)
 
 
-menus['Owned Heroes'] = HwPagedMenu(
-    title=_TR['menus']['Owned Heroes'],
+menus['Owned Heroes'] = PagedMenu(
+    title=_TR['Owned Heroes'],
     select_callback=_owned_heroes_select_callback,
     build_callback=_owned_heroes_build_callback
 )
@@ -201,7 +198,7 @@ def _buy_heroes_build_callback(menu, player_index):
             '{0} ({1})'.format(
                 hero_cls.name,
                 _translate_text(
-                    _TR['menus']['Cost'].get_string(cost=hero_cls.cost),
+                    _TR['Cost'].get_string(cost=hero_cls.cost),
                     player_index
                 )
             ),
@@ -211,9 +208,9 @@ def _buy_heroes_build_callback(menu, player_index):
             option.selectable = option.highlight = False
         menu.append(option)
 
-menus['Buy Heroes'] = HwPagedMenu(
-    title=_TR['menus']['Buy Heroes'],
-    description=_TR['menus']['Gold'],
+menus['Buy Heroes'] = PagedMenu(
+    title=_TR['Buy Heroes'],
+    description=_TR['Gold'],
     select_callback=_buy_heroes_select_callback,
     build_callback=_buy_heroes_build_callback
 )
@@ -240,11 +237,11 @@ def _main_build_callback(menu, player_index):
 menus['Main'] = SimpleMenu(
     data=[
         Text('Hero-Wars'),
-        Text(_TR['menus']['Gold']),
-        SimpleOption(1, _TR['menus']['Current Hero'], menus['Current Hero']),
-        SimpleOption(2, _TR['menus']['Owned Heroes'], menus['Owned Heroes']),
-        SimpleOption(3, _TR['menus']['Buy Heroes'], menus['Buy Heroes']),
-        SimpleOption(0, _TR['menulib']['Close'])
+        Text(_TR['Gold']),
+        SimpleOption(1, _TR['Current Hero'], menus['Current Hero']),
+        SimpleOption(2, _TR['Owned Heroes'], menus['Owned Heroes']),
+        SimpleOption(3, _TR['Buy Heroes'], menus['Buy Heroes']),
+        SimpleOption(0, _TR['Close'])
     ],
     select_callback=_main_select_callback,
     build_callback=_main_build_callback
