@@ -367,8 +367,8 @@ def player_say(game_event):
     # If the text was '!ultimate', execute ultimate skills
     if text2 == 'ultimate':
         Player_Ultimate(
-            player_index=owner.index,
-            player_userid=owner.userid
+            index=player.index,
+            userid=player.userid
         ).fire()
 
     # If the text was '!hw' or '!hw', open Main menu

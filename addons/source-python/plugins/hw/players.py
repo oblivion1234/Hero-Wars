@@ -14,8 +14,8 @@ from hw.tools import find_element
 from hw.configs import database_path
 from hw.configs import starting_heroes
 
-# Custom packages
-import xtend
+# Xtend
+from xtend.players import PlayerEntity
 
 # Source.Python
 from players.helpers import index_from_userid
@@ -119,7 +119,7 @@ def remove_player(userid):
 # >> CLASSES
 # ======================================================================
 
-class _Player(xtend.PlayerEntity):
+class _Player(PlayerEntity):
     """Player class for Hero-Wars related activity.
 
     Player extends Source.Python's PlayerEntity, implementing player

@@ -38,8 +38,8 @@ class Hero_Level_Up(CustomEvent):
 
 
 class Player_Ultimate(CustomEvent):
-    player_index = ShortVariable("Player's index")
-    player_userid = ShortVariable("Player's userid")
+    index = ShortVariable("Player's index")
+    userid = ShortVariable("Player's userid")
 
 
 # ======================================================================
