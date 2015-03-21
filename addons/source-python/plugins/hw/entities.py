@@ -199,11 +199,7 @@ class Hero(Entity):
 
         self._exp = 0
         Entity.level.fset(self, level)  # Call to Entity's level setter
-        self._fire_level_up_event()
-
-    def _fire_level_up_event(self):
-        event = Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self))
-        event.fire()
+        Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
 
     @property
     def exp(self):
@@ -255,7 +251,7 @@ class Hero(Entity):
 
             # Fire the level up event
             if self.level > old_lvl:
-                self._fire_level_up_event()
+                Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
 
     @property
     def skill_points(self):
