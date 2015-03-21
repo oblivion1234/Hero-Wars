@@ -96,7 +96,7 @@ def create_player(userid):
     return player
 
 
-def remove_player(userid):
+def remove_player(player):
     """Removes a player, inserting his data into the database.
 
     Finds a player with given userid, saving his data into the database
@@ -106,13 +106,10 @@ def remove_player(userid):
         userid: Userid of the player to remove
     """
 
-    # Attempt to get the player
-    player = get_player(userid)
-    if player:
-
-        # Save player's data and remove him
-        save_player_data(database_path, player)
-        player_list.remove(player)
+    # Save player's data and remove him
+    save_player_data(database_path, player)
+    player_list.remove(player)
+    del PlayerEntity._instances[player.index]
 
 
 # ======================================================================

@@ -100,9 +100,9 @@ def load():
 def unload():
     """Save all unsaved data into database."""
 
-    # Save each player's data into the database
+    # Save each player's data into the database and remove the player
     for player in player_list:
-        save_player_data(cfg.database_path, player)
+        remove_player(player)
 
     # Send a message to everyone
     other_messages['Plugin Unloaded'].send()
@@ -218,7 +218,8 @@ def player_disconnect(game_event):
     """Removes a player and saves his data upon disconnection."""
 
     userid = game_event.get_int('userid')
-    remove_player(userid)
+    player = get_player(userid)
+    remove_player(player)
 
 
 @Event
