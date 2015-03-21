@@ -115,20 +115,6 @@ def _current_hero_build_callback(menu, player_index):
     # Clear the menu
     menu.clear()
 
-    """# Loop through hero's passives
-    for passive in hero.passives:
-
-        # Get the additional info for passive
-        info = ''
-        if passive.level > 0:
-            if passive.max_level > 0:
-                info = ' ({0}/{1})'.format(passive.level, passive.max_level)
-            else:
-                info = ' ({0})'.format(passive.level)
-
-        # Add the option to the menu
-        menu.append(Text('P. {0}{1}'.format(passive.name, info)))"""
-
     # Loop through hero's skills
     for skill in hero.skills:
 
@@ -194,8 +180,9 @@ def _owned_heroes_select_callback(menu, player_index, choice):
         select_callback=_hero_owned_info_select_callback,
         build_callback=_hero_owned_info_build_callback,
         constants={7: PagedOption(_TR['Change'], 7)},
+        previous_menu=menu
     )
-    next_menu.previous_menu = menu
+
     return next_menu
 
 
@@ -211,8 +198,7 @@ def _owned_heroes_build_callback(menu, player_index):
             ),
             hero
         )
-        #if hero.cls_id == player.hero.cls_id:
-        #    option.selectable = option.highlight = False
+
         menu.append(option)
 
 
