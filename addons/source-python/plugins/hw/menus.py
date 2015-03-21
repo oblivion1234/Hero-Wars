@@ -63,9 +63,9 @@ class EntityMenu(PagedMenu):
     - entities: List of entities with category attribute
     """
 
-    def __init__(self, entities=[], *args, **kwargs):
+    def __init__(self, entities=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.entities = entities
+        self.entities = entities or []
 
 
 class CategoryMenu(EntityMenu):
