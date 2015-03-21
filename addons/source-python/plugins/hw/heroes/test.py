@@ -31,7 +31,9 @@ class TestHero1(Hero):
 class HealthSpeed(Skill):
     name = 'Speed&Health Passive'
     description = 'Gain speed on spawn and health on attack.'
-    beam_ents = xtend.effects.BeamEnts(blue=0, life=2)
+    beam_ents = xtend.effects.BeamEnts(
+        start_width=2, end_width=1, speed=1, red=255, green=255, life=2
+    )
 
     def player_spawn(self, player, **eargs):
         player.set_property_float('m_flLaggedMovementValue', 1.3)
@@ -40,7 +42,10 @@ class HealthSpeed(Skill):
     @chance(33)
     def player_attack(self, attacker, defender, **eargs):
         attacker.health += 5
-        self.beam_ents(start_index=attacker.index, end_index=defender.index)
+        self.beam_ents(
+            start_ent_index=attacker.index,
+            end_ent_index=defender.index
+        )
         attacker.message('+5 health from Passive.')
 
 
@@ -78,11 +83,11 @@ class Noclip(Skill):
     max_level = 3
     cost = 2
     required_level = 5
-    beam_follow = xtend.effects.BeamFollow(green=0, red=0, start_width=10)
+    beam_follow = xtend.effects.BeamFollow(blue=255, start_width=10)
 
     @cooldownf(lambda self, **eargs: 20 - self.level * 2)
     def player_ultimate(self, player, **eargs):
         duration = 1 + self.level
         player.noclip(duration)
-        self.beam_follow(index=player.index)
+        self.beam_follow(ent_index=player.index)
         player.message('You got noclip for {0} seconds!'.format(duration))

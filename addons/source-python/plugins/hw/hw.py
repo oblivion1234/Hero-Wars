@@ -29,6 +29,9 @@ import hw.configs as cfg
 # Source.Python
 from events import Event
 
+from players.helpers import userid_from_playerinfo
+from players.helpers import index_from_playerinfo
+
 from filters.players import PlayerIter
 
 from engines.server import engine_server
@@ -38,6 +41,8 @@ from cvars.public import PublicConVar
 from plugins.info import PluginInfo
 
 from translations.strings import LangStrings
+
+from commands.client import ClientCommand
 
 
 # ======================================================================
@@ -155,63 +160,35 @@ def give_team_exp(player, exp_key):
 
 
 # ======================================================================
-# >> GAME EVENTS
+# >> CLIENT COMMANDS
 # ======================================================================
 
-@Event
-def hero_pre_level_up(game_event):
-    """Fetches the player and raises the Hero_Level_Up event."""
+@ClientCommand('hw_ultimate')
+def client_command_ultimate(playerinfo, command):
+    """Raises ultimate event with player's information."""
 
-    # Raise hero_level_up event
-    hero_id = game_event.get_int('id')
-    owner = None
-    for player in player_list:
-        if id(player.hero) == hero_id:
-            owner = player
-            break
-    if owner:
-        Hero_Level_Up(
-            cls_id=game_event.get_string('cls_id'),
-            id=hero_id,
-            player_index=owner.index,
-            player_userid=owner.userid
-        ).fire()
+    Player_Ultimate(
+        index=index_from_playerinfo(playerinfo),
+        userid=userid_from_playerinfo(playerinfo)
+    ).fire()
 
 
-@Event
-def hero_level_up(game_event):
-    """Sends hero's status to player and opens current hero menu."""
+@ClientCommand('hw_menu')
+def client_command_menu(playerinfo, command):
+    """Opens a menu."""
 
-    # Get the player and his hero
-    player = get_player(game_event.get_int('player_userid'))
-    hero = player.hero
-
-    # Send hero's status via chat
-    other_messages['Hero Status'].send(
-        player.index,
-        name=hero.name,
-        level=hero.level,
-        current=hero.exp,
-        required=hero.required_exp
-    )
-
-    # Open current hero info menu (Kamiqawa, what?) to let the player
-    # spend skill points
-    menus['Current Hero'].send(player.index)
-
-    # Execute player_level_up skills
-    player.hero.execute_skills('player_level_up', player=player, hero=hero)
+    index = index_from_playerinfo(playerinfo)
+    if command == 'hw_menu':
+        menus['main'].send(index)
+    else:
+        _, menu = command.split(maxsplit=1)
+        if menu in menus:
+            menus[menu].send(index)
 
 
-@Event
-def player_ultimate(game_event):
-    """Executes ultimate skills."""
-
-    userid = game_event.get_int('userid')
-    player = get_player(userid)
-    player.hero.execute_skills(
-        'player_ultimate', player=player)
-
+# ======================================================================
+# >> GAME EVENTS
+# ======================================================================
 
 @Event
 def player_disconnect(game_event):
@@ -447,3 +424,58 @@ def hostage_rescued(game_event):
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Hostage Rescue')
     give_team_exp(player, 'Hostage Rescue Team')
+
+
+@Event
+def hero_pre_level_up(game_event):
+    """Fetches the player and raises the Hero_Level_Up event."""
+
+    # Raise hero_level_up event
+    hero_id = game_event.get_int('id')
+    owner = None
+    for player in player_list:
+        if id(player.hero) == hero_id:
+            owner = player
+            break
+    if owner:
+        Hero_Level_Up(
+            cls_id=game_event.get_string('cls_id'),
+            id=hero_id,
+            player_index=owner.index,
+            player_userid=owner.userid
+        ).fire()
+
+
+@Event
+def hero_level_up(game_event):
+    """Sends hero's status to player and opens current hero menu."""
+
+    # Get the player and his hero
+    player = get_player(game_event.get_int('player_userid'))
+    hero = player.hero
+
+    # Send hero's status via chat
+    other_messages['Hero Status'].send(
+        player.index,
+        name=hero.name,
+        level=hero.level,
+        current=hero.exp,
+        required=hero.required_exp
+    )
+
+    # Open current hero info menu (Kamiqawa, what?) to let the player
+    # spend skill points
+    menus['Current Hero'].send(player.index)
+
+    # Execute player_level_up skills
+    player.hero.execute_skills('player_level_up', player=player, hero=hero)
+
+
+@Event
+def player_ultimate(game_event):
+    """Executes ultimate skills."""
+
+    userid = game_event.get_int('userid')
+    player = get_player(userid)
+    player.hero.execute_skills(
+        'player_ultimate', player=player)
