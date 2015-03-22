@@ -243,7 +243,8 @@ def player_spawn(game_event):
 def player_death(game_event):
     """Executes kill, assist and death skills.
 
-    Also gives exp from kill and assist."""
+    Also gives exp from kill and assist.
+    """
 
     # Get the attacker, defender and assister
     defender = get_player(game_event.get_int('userid'))
@@ -359,7 +360,10 @@ def player_say(game_event):
 
 @Event
 def round_end(game_event):
-    """Give exp from round win and loss."""
+    """Give exp from round win and loss.
+
+    Also executes round_end skills.
+    """
 
     # Get the winning team
     winner = game_event.get_int('winner')
@@ -380,50 +384,97 @@ def round_end(game_event):
             give_exp(player, 'Round Loss')
             give_gold(player, 'Round Loss')
 
+        # Execute hero's round_end skills
+        player.hero.execute_skills('round_end', player=player, winner=winner)
+
+
+@Event
+def round_start(game_event):
+    """Executes round_start skills."""
+
+    # Loop through all the players' userids
+    for userid in PlayerIter(is_filters=('ct', 't'), return_types='userid'):
+
+        # Get the player
+        player = get_player(userid)
+
+        # Execute hero's round_end skills
+        player.hero.execute_skills('round_start', player=player, winner=winner)
+
 
 @Event
 def bomb_planted(game_event):
-    """Give exp from bomb planting."""
+    """Give exp from bomb planting.
+
+    Also executes bomb_planted skills.
+    """
 
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Bomb Plant')
     give_team_exp(player, 'Bomb Plant Team')
 
+    # Execute hero's bomb_planted skills
+    player.hero.execute_skills('bomb_planted', player=player)
+
 
 @Event
 def bomb_exploded(game_event):
-    """Give exp from bomb explosion."""
+    """Give exp from bomb explosion.
+
+    Also executes bomb_exploded skills.
+    """
 
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Bomb Explode')
     give_team_exp(player, 'Bomb Explode Team')
 
+    # Execute hero's bomb_exploded skills
+    player.hero.execute_skills('bomb_exploded', player=player)
+
 
 @Event
 def bomb_defused(game_event):
-    """Give exp from bomb defusion."""
+    """Give exp from bomb defusion.
+
+    Also executes bomb_defused skills.
+    """
 
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Bomb Defuse')
     give_team_exp(player, 'Bomb Defuse Team')
 
+    # Execute hero's bomb_defused skills
+    player.hero.execute_skills('bomb_defused', player=player)
+
 
 @Event
 def hostage_follows(game_event):
-    """Give exp from hostage pick up."""
+    """Give exp from hostage pick up.
+
+    Also executes hostage_follows skills.
+    """
 
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Hostage Pick Up')
     give_team_exp(player, 'Hostage Pick Up Team')
 
+    # Execute hero's hostage_follows skills
+    player.hero.execute_skills('hostage_follows', player=player)
+
 
 @Event
 def hostage_rescued(game_event):
-    """Give exp from hostage rescue."""
+    """Give exp from hostage rescue.
+
+    Also executes hostage_rescued skills.
+    """
 
     player = get_player(game_event.get_int('userid'))
     give_exp(player, 'Hostage Rescue')
     give_team_exp(player, 'Hostage Rescue Team')
+
+    # Execute hero's hostage_rescued skills
+    player.hero.execute_skills('hostage_rescued', player=player)
 
 
 @Event
@@ -448,7 +499,10 @@ def hero_pre_level_up(game_event):
 
 @Event
 def hero_level_up(game_event):
-    """Sends hero's status to player and opens current hero menu."""
+    """Sends hero's status to player and opens current hero menu.
+
+    Also executes hero_level_up skills.
+    """
 
     # Get the player and his hero
     player = get_player(game_event.get_int('player_userid'))
@@ -468,7 +522,7 @@ def hero_level_up(game_event):
     menus['Current Hero'].send(player.index)
 
     # Execute player_level_up skills
-    player.hero.execute_skills('player_level_up', player=player, hero=hero)
+    player.hero.execute_skills('hero_level_up', player=player, hero=hero)
 
 
 @Event
