@@ -10,6 +10,13 @@ import os
 # >> CONFIGURATIONS
 # ======================================================================
 
+# List of admin's steamid's
+admins = (
+    'STEAM_0:1:17441574',  # Kqmiawaa (lul)
+    'STEAM_EXAMPLE',  # This could be Mahi but he didn't share his steamid
+    'STEAM_0:0:20178479'  # This is Mahi for realz
+)
+
 # Prefix needed for chat commands
 chat_command_prefix = '!'
 

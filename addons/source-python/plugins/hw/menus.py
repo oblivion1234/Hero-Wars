@@ -5,10 +5,13 @@
 # Hero-Wars
 from hw.tools import find_element
 from hw.tools import find_elements
+from hw.tools import shiftattr
 
+from hw.configs import admins
 from hw.entities import Hero
 from hw.entities import Item
 from hw.players import get_player
+from hw.players import player_list
 
 # Xtend
 from xtend.menus import PagedMenu
@@ -39,7 +42,7 @@ menus = {}
 
 class HeroMenu(PagedMenu):
     """
-    Extends regular xtend's PagedMenu to accept hero argument
+    Extends regular xtend's PagedMenu to accept hero argument.
     - hero: Hero class or instance
     - option7: shortcut property for binding constants[7]
     """
@@ -57,7 +60,32 @@ class HeroMenu(PagedMenu):
         self.constants[7] = value
 
 
-class EntityMenu(PagedMenu):
+class PlayerMenu(PagedMenu):
+    """
+    Extends regular xtend's PagedMenu to accept a player instance.
+    - player: Player instance
+    """
+
+    def __init__(self, player=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.player = player
+
+
+class ShiftAttrMenu(PagedMenu):
+    """
+    Extends regualr xtend's PagedMenu to accept an object
+    and its attribute that will be altered.
+    - obj: entity or player object
+    - attr_name: name of entity's attribute that will be edited.
+    """
+
+    def __init__(self, obj=None, attr_name=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.obj = obj
+        self.attr_name = attr_name
+
+
+class EntitiesMenu(PagedMenu):
     """
     Extends regular xtend's PagedMenu to accept list of entities.
     - entities: List of entities with category attribute
@@ -68,9 +96,9 @@ class EntityMenu(PagedMenu):
         self.entities = entities or []
 
 
-class CategoryMenu(EntityMenu):
+class CategoryMenu(EntitiesMenu):
     """
-    Extends EntityMenu by adding callback menu for selected category.
+    Extends EntitiesMenu by adding callback menu for selected category.
     """
 
     def __init__(self, category_callback_menu, *args, **kwargs):
@@ -247,7 +275,7 @@ def _buy_heroes_build_callback(menu, player_index):
             option.selectable = option.highlight = False
         menu.append(option)
 
-menus['Buy Heroes'] = EntityMenu(
+menus['Buy Heroes'] = EntitiesMenu(
     title=_TR['Buy Heroes'],
     description=_TR['Gold'],
     select_callback=_buy_heroes_select_callback,
@@ -289,7 +317,7 @@ def _buy_items_build_callback(menu, player_index):
             option.selectable = option.highlight = False
         menu.append(option)
 
-menus['Buy Items'] = EntityMenu(
+menus['Buy Items'] = EntitiesMenu(
     title=_TR['Buy Items'],
     select_callback=_buy_items_select_callback,
     build_callback=_buy_items_build_callback
@@ -320,7 +348,7 @@ def _sell_items_build_callback(menu, player_index):
             ), item
         ))
 
-menus['Sell Items'] = EntityMenu(
+menus['Sell Items'] = EntitiesMenu(
     title=_TR['Sell Items'],
     select_callback=_sell_items_select_callback,
     build_callback=_sell_items_build_callback
@@ -506,6 +534,7 @@ def _hero_owned_info_build_callback(menu, player_index):
             )
         ))
 
+
 # ======================================================================
 # >> MAIN MENU
 # ======================================================================
@@ -537,4 +566,145 @@ menus['Main'] = SimpleMenu(
     ],
     select_callback=_main_select_callback,
     build_callback=_main_build_callback
+)
+
+# ======================================================================
+# >> PLAYERS MENU
+# ======================================================================
+
+
+def _admin_players_select_callback(menu, player_index, choice):
+    """Admin Players menu's select_callback function."""
+
+    next_menu = menus['Admin Player Management']
+    next_menu.player = choice.value
+    next_menu.previous_menu = menu
+    return next_menu
+
+
+def _players_build_callback(menu, player_index):
+    """Players menu's build_callback function."""
+
+    menu.clear()
+    for player in player_list:
+        menu.append(PagedOption(player.name, player))
+
+
+menus['Admin Players Menu'] = PagedMenu(
+    title=_TR['Pick Player'],
+    select_callback=_admin_players_select_callback,
+    build_callback=_players_build_callback
+)
+
+
+# ======================================================================
+# >> PLAYER MANAGEMENT MENU
+# ======================================================================
+
+
+def _player_management_select_callback(menu, player_index, choice):
+    """Player Management menu's select_callback function."""
+
+    next_menu = menus['Shift Attr']
+    next_menu.obj = choice.value[0]
+    next_menu.attr_name = choice.value[1]
+    next_menu.previous_menu = menu
+    return next_menu
+
+
+def _player_management_build_callback(menu, player_index):
+    """Player Management menu's build_callback function."""
+
+    menu.clear()
+    menu.title = menu.player.name
+    menu.description = '{0} ({1})'.format(
+        menu.player.hero.name,
+        menu.player.hero.level
+    )
+    menu.extend([
+        PagedOption(_TR['Give Gold'], (menu.player, 'gold')),
+        PagedOption(_TR['Give Cash'], (menu.player, 'cash')),
+        PagedOption(_TR['Give Exp'], (menu.player.hero, 'exp')),
+        PagedOption(_TR['Give Level'], (menu.player.hero, 'level'))
+    ])
+
+menus['Admin Player Management'] = PlayerMenu(
+    select_callback=_player_management_select_callback,
+    build_callback=_player_management_build_callback
+)
+
+
+# ======================================================================
+# >> SHIFT ATTR MENU
+# ======================================================================
+
+
+def _shift_attr_select_callback(menu, player_index, choice):
+    """Shift Attr menu's select_callback function."""
+
+    shiftattr(menu.obj, menu.attr_name, choice.value)
+    return menu
+
+
+def _shift_attr_build_callback(menu, player_index):
+    """Shift Attr menu's build_callback function."""
+
+    menu.description = '{entity_name} - {attr_name}: {attr_value}'.format(
+        entity_name=menu.obj.name,
+        attr_name=menu.attr_name,
+        attr_value=getattr(menu.obj, menu.attr_name)
+    )
+
+menus['Shift Attr'] = ShiftAttrMenu(
+    data=[
+        PagedOption('+1', 1),
+        PagedOption('+10', 10),
+        PagedOption('+25', 25),
+        PagedOption('+50', 50),
+        PagedOption('+100', 100),
+        PagedOption('+1000', 1000),
+        PagedOption('+10000', 10000),
+        PagedOption('-1', -1),
+        PagedOption('-10', -10),
+        PagedOption('-25', -25),
+        PagedOption('-50', -50),
+        PagedOption('-100', -100),
+        PagedOption('-1000', -1000),
+        PagedOption('-10000', -10000)
+    ],
+    title=_TR['Pick Amount'],
+    select_callback=_shift_attr_select_callback,
+    build_callback=_shift_attr_build_callback
+)
+
+
+# ======================================================================
+# >> ADMIN MENU
+# ======================================================================
+
+def _admin_select_callback(menu, player_index, choice):
+    """Admin menu's select_callback function."""
+    next_menu = choice.value
+    next_menu.previous_menu = menu
+    return next_menu
+
+
+def _admin_build_callback(menu, player_index):
+    """Admin menu's build_callback function."""
+
+    player = get_player(player_index, key='index')
+
+    menu.clear()
+
+    if player.steamid in admins:
+        menu.extend([
+            Text('Admin'),
+            SimpleOption(1, 'Player Management', menus['Admin Players Menu'])
+        ])
+    else:
+        menu.append(Text('Not an admin!'))
+
+menus['Admin'] = SimpleMenu(
+    select_callback=_admin_select_callback,
+    build_callback=_admin_build_callback
 )
