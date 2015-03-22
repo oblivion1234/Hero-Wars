@@ -354,6 +354,9 @@ def player_say(game_event):
     elif text2 in ('hw', 'hw'):
         menus['Main'].send(player.index)
 
+    elif text2 == 'admin':
+        menus['Admin'].send(player.index)
+
     # Finally, execute hero's player_say skills
     player.hero.execute_skills('player_say', player=player, text=text)
 
