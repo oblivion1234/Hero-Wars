@@ -96,14 +96,15 @@ class EntitiesMenu(PagedMenu):
         self.entities = entities or []
 
 
-class CategoryMenu(EntitiesMenu):
+class ForwardMenu(EntitiesMenu):
     """
-    Extends EntitiesMenu by adding callback menu for selected category.
+    Extends EntitiesMenu by adding next menu variable.
+    - callback_menu: menu function
     """
 
-    def __init__(self, category_callback_menu, *args, **kwargs):
+    def __init__(self, callback_menu, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.category_callback_menu = category_callback_menu
+        self.callback_menu = callback_menu
 
 # ======================================================================
 # >> CURRENT HERO MENU
@@ -362,7 +363,7 @@ menus['Sell Items'] = EntitiesMenu(
 def _entity_categories_select_callback(menu, player_index, choice):
     """Entity Categories menu's select_callback function."""
 
-    next_menu = menu.category_callback_menu
+    next_menu = menu.callback_menu
     next_menu.previous_menu = menu
     next_menu.entities = choice.value
     return next_menu
@@ -429,15 +430,15 @@ def _buy_item_categories_build_callback(menu, player_index):
             ), categories[category]
         ))
 
-menus['Hero Buy Categories'] = CategoryMenu(
-    category_callback_menu=menus['Buy Heroes'],
+menus['Hero Buy Categories'] = ForwardMenu(
+    callback_menu=menus['Buy Heroes'],
     title=_TR['Hero Categories'],
     select_callback=_entity_categories_select_callback,
     build_callback=_buy_hero_categories_build_callback
 )
 
-menus['Item Buy Categories'] = CategoryMenu(
-    category_callback_menu=menus['Buy Items'],
+menus['Item Buy Categories'] = ForwardMenu(
+    callback_menu=menus['Buy Items'],
     title=_TR['Item Categories'],
     select_callback=_entity_categories_select_callback,
     build_callback=_buy_item_categories_build_callback
@@ -534,86 +535,23 @@ def _hero_owned_info_build_callback(menu, player_index):
             )
         ))
 
-
 # ======================================================================
-# >> MAIN MENU
-# ======================================================================
-
-def _main_select_callback(menu, player_index, choice):
-    """Main menu's select_callback function."""
-
-    choice.value.previous_menu = menu
-    return choice.value
-
-
-def _main_build_callback(menu, player_index):
-    """Main menu's build_callback function."""
-
-    player = get_player(player_index, key='index')
-    menu[1].text.get_string(gold=player.gold)
-
-
-menus['Main'] = SimpleMenu(
-    data=[
-        Text('Hero-Wars'),
-        Text(_TR['Gold']),
-        SimpleOption(1, _TR['Current Hero'], menus['Current Hero']),
-        SimpleOption(2, _TR['Owned Heroes'], menus['Owned Heroes']),
-        SimpleOption(3, _TR['Buy Heroes'], menus['Hero Buy Categories']),
-        SimpleOption(4, _TR['Sell Items'], menus['Sell Items']),
-        SimpleOption(5, _TR['Buy Items'], menus['Item Buy Categories']),
-        SimpleOption(0, _TR['Close'])
-    ],
-    select_callback=_main_select_callback,
-    build_callback=_main_build_callback
-)
-
-# ======================================================================
-# >> PLAYERS MENU
+# >> PLAYERINFO MENU
 # ======================================================================
 
 
-def _admin_players_select_callback(menu, player_index, choice):
-    """Admin Players menu's select_callback function."""
+def _playerinfo_select_callback(menu, player_index, choice):
+    """Player Info menu's select_callback function."""
 
-    next_menu = menus['Admin Player Management']
-    next_menu.player = choice.value
-    next_menu.previous_menu = menu
-    return next_menu
-
-
-def _players_build_callback(menu, player_index):
-    """Players menu's build_callback function."""
-
-    menu.clear()
-    for player in player_list:
-        menu.append(PagedOption(player.name, player))
-
-
-menus['Admin Players Menu'] = PagedMenu(
-    title=_TR['Pick Player'],
-    select_callback=_admin_players_select_callback,
-    build_callback=_players_build_callback
-)
-
-
-# ======================================================================
-# >> PLAYER MANAGEMENT MENU
-# ======================================================================
-
-
-def _player_management_select_callback(menu, player_index, choice):
-    """Player Management menu's select_callback function."""
-
-    next_menu = menus['Shift Attr']
+    next_menu = menu.callback_menu
     next_menu.obj = choice.value[0]
     next_menu.attr_name = choice.value[1]
     next_menu.previous_menu = menu
     return next_menu
 
 
-def _player_management_build_callback(menu, player_index):
-    """Player Management menu's build_callback function."""
+def _playerinfo_build_callback(menu, player_index):
+    """Player Info menu's build_callback function."""
 
     menu.clear()
     menu.title = menu.player.name
@@ -621,18 +559,19 @@ def _player_management_build_callback(menu, player_index):
         menu.player.hero.name,
         menu.player.hero.level
     )
-    menu.extend([
-        PagedOption(_TR['Give Gold'], (menu.player, 'gold')),
-        PagedOption(_TR['Give Cash'], (menu.player, 'cash')),
-        PagedOption(_TR['Give Exp'], (menu.player.hero, 'exp')),
-        PagedOption(_TR['Give Level'], (menu.player.hero, 'level'))
-    ])
 
-menus['Admin Player Management'] = PlayerMenu(
-    select_callback=_player_management_select_callback,
-    build_callback=_player_management_build_callback
+    for skill in menu.player.hero.skills:
+        menu.append(Text('{name} {cur}/{max}'.format(
+            name=skill.name,
+            cur=skill.level,
+            max=skill.max_level
+        )))
+
+
+menus['Playerinfo'] = PlayerMenu(
+    select_callback=_playerinfo_select_callback,
+    build_callback=_playerinfo_build_callback,
 )
-
 
 # ======================================================================
 # >> SHIFT ATTR MENU
@@ -677,10 +616,82 @@ menus['Shift Attr'] = ShiftAttrMenu(
     build_callback=_shift_attr_build_callback
 )
 
+# ======================================================================
+# >> PLAYER MANAGEMENT MENU
+# ======================================================================
+
+
+def _player_management_select_callback(menu, player_index, choice):
+    """Player Management menu's select_callback function."""
+
+    next_menu = menus['Shift Attr']
+    next_menu.obj = choice.value[0]
+    next_menu.attr_name = choice.value[1]
+    next_menu.previous_menu = menu
+    return next_menu
+
+
+def _player_management_build_callback(menu, player_index):
+    """Player Management menu's build_callback function."""
+
+    menu.clear()
+    menu.title = menu.player.name
+    menu.description = '{0} ({1})'.format(
+        menu.player.hero.name,
+        menu.player.hero.level
+    )
+    menu.extend([
+        PagedOption(_TR['Give Gold'], (menu.player, 'gold')),
+        PagedOption(_TR['Give Cash'], (menu.player, 'cash')),
+        PagedOption(_TR['Give Exp'], (menu.player.hero, 'exp')),
+        PagedOption(_TR['Give Level'], (menu.player.hero, 'level'))
+    ])
+
+menus['Admin Player Management'] = PlayerMenu(
+    select_callback=_player_management_select_callback,
+    build_callback=_player_management_build_callback
+)
+
+# ======================================================================
+# >> PLAYERS MENU
+# ======================================================================
+
+
+def _players_select_callback(menu, player_index, choice):
+    """Admin Players menu's select_callback function."""
+
+    next_menu = menu.callback_menu
+    next_menu.player = choice.value
+    next_menu.previous_menu = menu
+    return next_menu
+
+
+def _players_build_callback(menu, player_index):
+    """Players menu's build_callback function."""
+
+    menu.clear()
+    for player in player_list:
+        menu.append(PagedOption(player.name, player))
+
+
+menus['Admin Players Menu'] = ForwardMenu(
+    callback_menu=menus['Admin Player Management'],
+    title=_TR['Pick Player'],
+    select_callback=_players_select_callback,
+    build_callback=_players_build_callback
+)
+
+menus['Playerinfo Choose'] = ForwardMenu(
+    callback_menu=menus['Playerinfo'],
+    title=_TR['Pick Player'],
+    select_callback=_players_select_callback,
+    build_callback=_players_build_callback
+)
 
 # ======================================================================
 # >> ADMIN MENU
 # ======================================================================
+
 
 def _admin_select_callback(menu, player_index, choice):
     """Admin menu's select_callback function."""
@@ -707,4 +718,39 @@ def _admin_build_callback(menu, player_index):
 menus['Admin'] = SimpleMenu(
     select_callback=_admin_select_callback,
     build_callback=_admin_build_callback
+)
+
+# ======================================================================
+# >> MAIN MENU
+# ======================================================================
+
+
+def _main_select_callback(menu, player_index, choice):
+    """Main menu's select_callback function."""
+
+    choice.value.previous_menu = menu
+    return choice.value
+
+
+def _main_build_callback(menu, player_index):
+    """Main menu's build_callback function."""
+
+    player = get_player(player_index, key='index')
+    menu[1].text.get_string(gold=player.gold)
+
+
+menus['Main'] = SimpleMenu(
+    data=[
+        Text('Hero-Wars'),
+        Text(_TR['Gold']),
+        SimpleOption(1, _TR['Current Hero'], menus['Current Hero']),
+        SimpleOption(2, _TR['Owned Heroes'], menus['Owned Heroes']),
+        SimpleOption(3, _TR['Buy Heroes'], menus['Hero Buy Categories']),
+        SimpleOption(4, _TR['Sell Items'], menus['Sell Items']),
+        SimpleOption(5, _TR['Buy Items'], menus['Item Buy Categories']),
+        SimpleOption(6, _TR['Playerinfo'], menus['Playerinfo Choose']),
+        SimpleOption(0, _TR['Close'])
+    ],
+    select_callback=_main_select_callback,
+    build_callback=_main_build_callback
 )
