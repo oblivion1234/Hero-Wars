@@ -5,7 +5,7 @@
 # Hero-Wars
 from hw.entities import Hero
 
-from hw.tools import find_element
+from xtend.tools import find_element
 
 # Python
 import sqlite3

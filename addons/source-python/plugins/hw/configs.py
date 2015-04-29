@@ -12,9 +12,8 @@ import os
 
 # List of admin's steamid's
 admins = (
-    'STEAM_0:1:17441574',  # Kqmiawaa (lul)
-    'STEAM_EXAMPLE',  # This could be Mahi but he didn't share his steamid
-    'STEAM_0:0:20178479'  # This is Mahi for realz
+    'STEAM_0:1:17441574',  # Kamiqawa
+    'STEAM_0:0:20178479'  # Mahi
 )
 
 # Prefix needed for chat commands

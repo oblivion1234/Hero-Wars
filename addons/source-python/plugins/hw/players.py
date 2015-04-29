@@ -4,12 +4,9 @@
 
 # Hero-Wars
 from hw.database import load_player_data
-from hw.database import save_player_data
 from hw.database import save_hero_data
 
 from hw.entities import Hero
-
-from hw.tools import find_element
 
 from hw.configs import database_path
 from hw.configs import starting_heroes
@@ -17,106 +14,15 @@ from hw.configs import starting_heroes
 # Xtend
 from xtend.players import PlayerEntity
 
-# Source.Python
-from players.helpers import index_from_userid
-
-
-# ======================================================================
-# >> ALL DECLARATION
-# ======================================================================
-
-__all__ = (
-    'player_list',
-    'get_player',
-    'create_player',
-    'remove_player'
-)
-
-
-# ======================================================================
-# >> GLOBALS
-# ======================================================================
-
-player_list = []
-
-
-# ======================================================================
-# >> FUNCTIONS
-# ======================================================================
-
-def get_player(value, key='userid'):
-    """Gets a player with matching key.
-
-    Loops through the player list and returns a player with matching
-    key to the provided parameter value.
-
-    Args:
-        value: Value of the player's key to look for
-        key: Key to compare the value to
-
-    Returns:
-        Player with matching key or None
-    """
-
-    return find_element(player_list, key, value)
-
-
-def create_player(userid):
-    """Creates a new player, fetching his data from the database.
-
-    Creates a new player object, loads any saved data from the database
-    based on SteamID, makes sure the player gets the starting heroes
-    and has a current hero set. Finally returns the player after adding
-    him to the global player list.
-
-    Args:
-        userid: Userid of the player to create
-
-    Returns:
-        New player who's been added to the player list
-    """
-
-    # Create a new player and load his data from the database (if any)
-    player = _Player(index_from_userid(userid))
-    load_player_data(database_path, player)
-
-    # Make sure player gets the starting hero(es)
-    heroes = Hero.get_subclasses()
-    for cls_id in starting_heroes:
-        hero_cls = find_element(heroes, 'cls_id', cls_id)
-        if hero_cls and not find_element(player.heroes, 'cls_id', cls_id):
-            player.heroes.append(hero_cls())
-
-    # Make sure the player has a current hero
-    if not player.hero and player.heroes:
-        player.hero = player.heroes[0]
-
-    # Add the player to the global list and return the player
-    player_list.append(player)
-    return player
-
-
-def remove_player(player):
-    """Removes a player, inserting his data into the database.
-
-    Finds a player with given userid, saving his data into the database
-    and removing him from the global player list.
-
-    Args:
-        userid: Userid of the player to remove
-    """
-
-    # Save player's data and remove him
-    save_player_data(database_path, player)
-    player_list.remove(player)
-    del PlayerEntity._instances[player.index]
+from xtend.tools import CachedAttr
+from xtend.tools import find_element
 
 
 # ======================================================================
 # >> CLASSES
 # ======================================================================
 
-class _Player(PlayerEntity):
+class Player(PlayerEntity):
     """Player class for Hero-Wars related activity.
 
     Player extends Source.Python's PlayerEntity, implementing player
@@ -130,16 +36,36 @@ class _Player(PlayerEntity):
         lang_key: Language key used to display messages and menus
     """
 
-    def __init__(self, index):
-        """Creates a new Hero-Wars player.
+    _db_loaded = CachedAttr(bool)
+    _gold = CachedAttr(int)
+    _hero = CachedAttr(type(None))
+    heroes = CachedAttr(list)
+
+    def __init__(self, index, *args, **kwargs):
+        """Initializes a new PlayerEntity instance.
 
         Args:
-            index: Player's index
+            index: Index of the player's entity
         """
 
-        self._gold = 0
-        self._hero = None
-        self.heroes = []
+        # Do nothing if the player's data has already been loaded
+        if self._db_loaded:
+            return
+
+        # Load player's data from the database
+        load_player_data(database_path, self)
+        self._db_loaded = True
+
+        # Make sure the player gets his starting heroes
+        heroes = Hero.get_subclasses()
+        for cls_id in starting_heroes:
+            hero_cls = find_element(heroes, 'cls_id', cls_id)
+            if hero_cls and not find_element(self.heroes, 'cls_id', cls_id):
+                self.heroes.append(hero_cls())
+
+        # Make sure the player has a current hero
+        if not self.hero and self.heroes:
+            self.hero = self.heroes[0]
 
     @property
     def gold(self):

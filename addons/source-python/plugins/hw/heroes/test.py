@@ -8,7 +8,7 @@ from hw.entities import Hero, Skill
 from hw.tools import chance, chancef
 from hw.tools import cooldown, cooldownf
 
-from hw.players import get_player
+from hw.players import Player
 
 # Xtend
 import xtend.effects
@@ -68,9 +68,8 @@ class Ignite(Skill):
 
     def player_spawn(self, player, **eargs):
         target_team = player.team == 2 and 'ct' or 't'
-        for userid in PlayerIter(
-                is_filters=('alive', target_team), return_types='userid'):
-            target = get_player(userid)
+        for index in PlayerIter(is_filters=('alive', target_team)):
+            target = Player(index)
             target.burn(2 + self.level)
             target.message('You were burned!')
         player.message('You burned your enemies!')

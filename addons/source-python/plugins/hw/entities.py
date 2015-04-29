@@ -3,8 +3,8 @@
 # ======================================================================
 
 # Hero-Wars
-from hw.tools import get_subclasses
-from hw.tools import classproperty
+from xtend.tools import get_subclasses
+from xtend.tools import classproperty
 
 from hw.configs import default_hero_category
 from hw.configs import default_item_category
