@@ -237,10 +237,15 @@ def player_death(game_event):
     Also gives exp from kill and assist.
     """
 
-    # Get the attacker, defender and assister
-    defender = Player(index_from_userid(game_event.get_int('userid')))
-    attacker = Player(index_from_userid(game_event.get_int('attacker')))
-    assister = Player(index_from_userid(game_event.get_int('assister')))
+    # Get the userids from attacker, defender and assister
+    defender_id = game_event.get_int('userid')
+    attacker_id = game_event.get_int('attacker')
+    assister_id = game_event.get_int('assister')
+
+    # Get the player instances
+    defender = Player(index_from_userid(defender_id))
+    attacker = Player(index_from_userid(attacker_id)) if attacker_id else None
+    assister = Player(index_from_userid(assister_id)) if assister_id else None
 
     # Create the event arguments dict
     eargs = {
@@ -252,7 +257,7 @@ def player_death(game_event):
     }
 
     # If it was a suicide
-    if defender.index == attacker.index:
+    if not attacker or defender.index == attacker.index:
 
         # Execute suicide skills
         defender.hero.execute_skills(
@@ -293,9 +298,13 @@ def player_death(game_event):
 def player_hurt(game_event):
     """Executes attack and defend skills."""
 
-    # Get defender and attacker
-    defender = Player(index_from_userid(game_event.get_int('userid')))
-    attacker = Player(index_from_userid(game_event.get_int('attacker')))
+    # Get attacker's and defender's userids
+    defender_id = game_event.get_int('userid')
+    attacker_id = game_event.get_int('attacker')
+
+    # Get the player instances
+    defender = Player(index_from_userid(defender_id))
+    attacker = Player(index_from_userid(attacker_id)) if attacker_id else None
 
     # Create event arguments dict
     eargs = {
@@ -307,7 +316,8 @@ def player_hurt(game_event):
     }
 
     # Execute attack and defend skills
-    attacker.hero.execute_skills('player_attack', player=attacker, **eargs)
+    if attacker:
+        attacker.hero.execute_skills('player_attack', player=attacker, **eargs)
     defender.hero.execute_skills('player_defend', player=defender, **eargs)
 
 

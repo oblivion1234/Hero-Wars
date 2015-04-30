@@ -32,6 +32,7 @@ class HealthSpeed(Skill):
     name = 'Speed&Health Passive'
     description = 'Gain speed on spawn and health on attack.'
     beam_ents = xtend.effects.BeamEnts(
+        model='sprites/lgtning.vmt',
         start_width=2, end_width=1, speed=1, red=255, green=255, life=2
     )
 
@@ -82,7 +83,9 @@ class Noclip(Skill):
     max_level = 3
     cost = 2
     required_level = 5
-    beam_follow = xtend.effects.BeamFollow(blue=255, start_width=10)
+    beam_follow = xtend.effects.BeamFollow(
+        blue=255, start_width=10, model='sprites/lgtning.vmt'
+    )
 
     @cooldownf(lambda self, **eargs: 20 - self.level * 2)
     def player_ultimate(self, player, **eargs):
