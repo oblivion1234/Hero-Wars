@@ -3,58 +3,55 @@
 # ======================================================================
 
 # Hero-Wars
-from hw.database import load_player_data
 from hw.database import save_hero_data
 
 from hw.entities import Hero
 
-from hw.configs import database_path
+from hw.tools import find_element
+
 from hw.configs import starting_heroes
+from hw.configs import player_entity_class
 
-# Xtend
-from xtend.players import PlayerEntity
+# Source.Python
+from players.helpers import playerinfo_from_userid
+from players.helpers import index_from_userid
 
-from xtend.tools import CachedAttr
-from xtend.tools import find_element
+from messages import SayText2
+
+
+# ======================================================================
+# >> GLOBALS
+# ======================================================================
+
+users = {
+    # userid: User
+}
 
 
 # ======================================================================
 # >> CLASSES
 # ======================================================================
 
-class Player(PlayerEntity):
-    """Player class for Hero-Wars related activity.
-
-    Player extends Source.Python's PlayerEntity, implementing player
-    sided properties for Hero-Wars related information.
-    Adds methods such as burn, freeze and push.
+class User(object):
+    """User class for Hero-Wars related activity and data.
 
     Attributes:
         gold: Player's Hero-Wars gold, used to purchase heroes and items
         hero: Player's hero currently in use
         heroes: List of owned heroes
-        lang_key: Language key used to display messages and menus
     """
 
-    _db_loaded = CachedAttr(bool)
-    _gold = CachedAttr(int)
-    _hero = CachedAttr(type(None))
-    heroes = CachedAttr(list)
-
-    def __init__(self, index, *args, **kwargs):
-        """Initializes a new PlayerEntity instance.
+    def __init__(self, userid):
+        """Initializes a new User instance.
 
         Args:
-            index: Index of the player's entity
+            userid: Userid of the user
         """
 
-        # Do nothing if the player's data has already been loaded
-        if self._db_loaded:
-            return
-
-        # Load player's data from the database
-        load_player_data(database_path, self)
-        self._db_loaded = True
+        self.userid = userid
+        self._gold = 0
+        self._hero = None
+        self.heroes = []
 
         # Make sure the player gets his starting heroes
         heroes = Hero.get_subclasses()
@@ -66,6 +63,17 @@ class Player(PlayerEntity):
         # Make sure the player has a current hero
         if not self.hero and self.heroes:
             self.hero = self.heroes[0]
+
+    @property
+    def steamid(self):
+        """Returns user's steamid."""
+
+        return playerinfo_from_userid(self.userid).get_networkid_string()
+
+    def get_entity(self):
+        """Returns a PlayerEntity instance from user."""
+
+        return player_entity_class(index_from_userid(self.userid))
 
     @property
     def gold(self):
@@ -123,7 +131,7 @@ class Player(PlayerEntity):
         if self.hero:
 
             # Save current hero's data
-            save_hero_data(database_path, self.steamid, self.hero)
+            save_hero_data(self.steamid, self.hero)
 
             # Destroy current hero's items
             for item in self.hero.items:
@@ -133,14 +141,11 @@ class Player(PlayerEntity):
         # Change to the new hero
         self._hero = hero
 
-    @property
-    def cs_team(self):
-        """Returns player's Counter-Strike team."""
+    def message(self, text):
+        """Sends a message to an user through SayText2.
 
-        return ['un', 'spec', 't', 'ct'][self.team]
+        Args:
+            text: Text to send
+        """
 
-    @cs_team.setter
-    def cs_team(self, value):
-        """Sets player's Counter-Strike team."""
-
-        self.team = ['un', 'spec', 't', 'ct'].index(value)
+        SayText2(message=text).send(index_from_userid(self.userid))

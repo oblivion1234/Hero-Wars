@@ -14,8 +14,47 @@ from messages import SayText2
 
 
 # ======================================================================
+# >> CLASSES
+# ======================================================================
+
+class classproperty(object):
+    """
+    Decorator to create a class property.
+
+    http://stackoverflow.com/a/3203659/2505645
+    """
+
+    def __init__(self, getter):
+        self.getter = getter
+
+    def __get__(self, instance, owner):
+        return self.getter(owner)
+
+
+# ======================================================================
 # >> FUNCTIONS
 # ======================================================================
+
+def find_element(iterable, attr_name, attr_value):
+    """Finds an element from an iterable by comparing an attribute."""
+    for x in iterable:
+        if getattr(x, attr_name) == attr_value:
+            return x
+
+
+def find_elements(iterable, attr_name, attr_value):
+    """Finds all elements from an iterable by comparing an attribute."""
+    return (x for x in iterable if getattr(x, attr_name) == attr_value)
+
+
+def get_subclasses(cls):
+    """Returns a set of class' subclasses."""
+    subclasses = set()
+    for subcls in cls.__subclasses__():
+        subclasses.add(subcls)
+        subclasses.update(get_subclasses(subcls))
+    return subclasses
+
 
 def get_messages(lang_strings):
     """Gets a dict of SayText2 messages from a LangStrings object.

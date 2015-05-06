@@ -3,8 +3,8 @@
 # ======================================================================
 
 # Hero-Wars
-from xtend.tools import find_element
-from xtend.tools import find_elements
+from hw.tools import find_element
+from hw.tools import find_elements
 
 from hw.tools import shiftattr
 
@@ -13,12 +13,10 @@ from hw.configs import admins
 from hw.entities import Hero
 from hw.entities import Item
 
-from hw.players import Player
-
-# Xtend
-from xtend.menus import PagedMenu
+from hw.users import users
 
 # Source.Python
+from menus import PagedMenu as SpPagedMenu
 from menus import SimpleMenu
 from menus import SimpleOption
 from menus import PagedOption
@@ -29,6 +27,8 @@ from menus.base import _translate_text
 from translations.strings import LangStrings
 
 from filters.players import PlayerIter
+
+from players.helpers import userid_from_index
 
 
 # ======================================================================
@@ -43,6 +43,196 @@ menus = {}
 # ======================================================================
 # >> CLASSES
 # ======================================================================
+
+class PagedMenu(SpPagedMenu):
+    """
+    Extend's Source.Python's default menus package with new features
+    and functionality, such as
+    - constants: Display same option on all pages
+    - previous_menu: presssing "Previous" on the first page
+    - next_menu: pressing "Next" on the last page
+    - display_page_info: Display the page number in top right corner
+    """
+
+    def __init__(
+            self, data=None, select_callback=None, build_callback=None,
+            description=None, title=None,
+            top_seperator='-' * 30, bottom_seperator='-' * 30, fill=False,
+            # Custom parameters
+            constants=None, previous_menu=None, next_menu=None,
+            display_page_info=True):
+        """Initializes a new PagedMenu instance."""
+
+        super().__init__(
+            data, select_callback, build_callback,
+            description, title, top_seperator, bottom_seperator, fill
+        )
+        self.constants = constants or {}
+        self.previous_menu = previous_menu
+        self.next_menu = next_menu
+        self.display_page_info = display_page_info
+
+    def _get_max_item_count(self):
+        """Returns the maximum possible item count per page."""
+
+        return 7 - len(self.constants)
+
+    def _format_header(self, player_index, page, slots):
+        """Prepares the header for the menu."""
+
+        # Create the page info string
+        info = ''
+        if self.display_page_info:
+            info = ' [{0}/{1}]'.format(page.index + 1, self.page_count)
+
+        if self.title:
+            buffer = '{0}{1}\n'.format(
+                _translate_text(self.title, player_index), info
+            )
+        elif info:
+            buffer = '{0}\n'.format(info)
+        else:
+            buffer = ''
+
+        # Set description if present
+        if self.description is not None:
+            buffer += _translate_text(self.description, player_index) + '\n'
+
+        # Set the top seperator if present
+        if self.top_seperator is not None:
+            buffer += self.top_seperator + '\n'
+
+        return buffer
+
+    def _format_body(self, player_index, page, slots):
+        """Prepares the body for the menu."""
+
+        buffer = ''
+
+        # Get all the options for the current page
+        options = self._get_options(page.index)
+        option_iter = iter(options)
+
+        # Loop through numbers from 1 to 7
+        choice_index = 0
+        while choice_index < 8:
+
+            # Increment the choice index
+            choice_index += 1
+
+            # See if there's a constant option for that number
+            if choice_index in self.constants:
+                option = self.constants[choice_index]
+
+            # Else pick the next option from the page
+            else:
+                try:
+                    option = next(option_iter)
+                except StopIteration:
+                    continue  # In case there are constants left
+
+            # Add the option to page's options
+            page.options[choice_index] = option
+
+            # Add the option's text like SP's PagedMenu does
+            if isinstance(option, PagedOption):
+                buffer += option._render(player_index, choice_index)
+                if option.selectable:
+                    slots.add(choice_index)
+            else:
+                choice_index -= 1
+                if isinstance(option, Text):
+                    buffer += option._render(player_index, choice_index)
+                else:
+                    buffer += Text(option)._render(player_index, choice_index)
+
+        # Fill the rest of the menu
+        if self.fill:
+            buffer += ' \n' * (7 - len(options) - len(self.constants))
+
+        return buffer
+
+    def _format_footer(self, player_index, page, slots):
+        """Prepares the footer for the menu."""
+
+        buffer = ''
+
+        # Set the bottom seperator if present
+        if self.bottom_seperator is not None:
+            buffer += '{0}\n'.format(self.bottom_seperator)
+
+        # Add "Previous" option
+        option_previous = PagedOption(
+            _TR['Previous'],
+            self.previous_menu,
+            highlight=False,
+            selectable=False
+        )
+        if page.index > 0 or self.previous_menu:
+            option_previous.highlight = option_previous.selectable = True
+            slots.add(8)
+        buffer += option_previous._render(player_index, 8)
+
+        # Add "Next" option
+        option_next = PagedOption(
+            _TR['Next'],
+            self.next_menu,
+            highlight=False,
+            selectable=False
+        )
+        if page.index < self.last_page_index or self.next_menu:
+            option_next.highlight = option_next.selectable = True
+            slots.add(9)
+        buffer += option_next._render(player_index, 9)
+
+        # Add "Close" option
+        option_close = PagedOption(
+            _TR['Close'],
+            highlight=False
+        )
+        buffer += option_close._render(player_index, 0)
+
+        # Return the buffer
+        return buffer
+
+    def _select(self, player_index, choice_index):
+        """Handles a menu selection."""
+
+        # Do nothing if the menu is being closed
+        if choice_index == 0:
+            del self._player_pages[player_index]
+            return None
+
+        # Get the player's current page
+        page = self._player_pages[player_index]
+
+        # If "Previous" was clicked
+        if choice_index == 8:
+
+            # Display previous page?
+            if page.index > 0:
+                self.set_player_page(player_index, page.index - 1)
+                return self
+
+            # Move to previous menu?
+            elif self.previous_menu:
+                return self.previous_menu
+
+        # If "Next" was clicked
+        elif choice_index == 9:
+
+            # Display Next page?
+            if page.index < self.last_page_index:
+                self.set_player_page(player_index, page.index + 1)
+                return self
+
+            # Move to next menu?
+            elif self.next_menu:
+                return self.next_menu
+
+        # Let the super class handle the rest
+        return super()._select(player_index, choice_index)
+
 
 class HeroMenu(PagedMenu):
     """
@@ -110,22 +300,22 @@ class ForwardMenu(EntitiesMenu):
         super().__init__(*args, **kwargs)
         self.callback_menu = callback_menu
 
+
 # ======================================================================
 # >> CURRENT HERO MENU
 # ======================================================================
 
-
 def _current_hero_select_callback(menu, player_index, choice):
     """Current Hero menu's select_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     if choice.value == 7:
-        for skill in player.hero.skills:
+        for skill in user.hero.skills:
             skill.level = 0
     else:
         skill = choice.value
-        if (skill.cost <= player.hero.skill_points
-                and skill.required_level <= player.hero.level
+        if (skill.cost <= user.hero.skill_points
+                and skill.required_level <= user.hero.level
                 and skill.level < skill.max_level):
             skill.level += 1
     return menu
@@ -134,9 +324,9 @@ def _current_hero_select_callback(menu, player_index, choice):
 def _current_hero_build_callback(menu, player_index):
     """Current Hero menu's build_callback function."""
 
-    # Get player and hero
-    player = Player(player_index)
-    hero = player.hero
+    # Get user and hero
+    user = users[userid_from_index(player_index)]
+    hero = user.hero
 
     # Set menu's base attributes
     menu.title = hero.name
@@ -222,9 +412,9 @@ def _owned_heroes_select_callback(menu, player_index, choice):
 def _owned_heroes_build_callback(menu, player_index):
     """Owned Heroes menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.clear()
-    for hero in player.heroes:
+    for hero in user.heroes:
         option = PagedOption(
             '{0} {1}/{2}'.format(
                 hero.name, hero.level, hero.max_level
@@ -263,7 +453,7 @@ def _buy_heroes_select_callback(menu, player_index, choice):
 def _buy_heroes_build_callback(menu, player_index):
     """Buy Heroes menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.clear()
     for hero_cls in menu.entities:
         option = PagedOption(
@@ -276,7 +466,7 @@ def _buy_heroes_build_callback(menu, player_index):
             ),
             hero_cls
         )
-        if hero_cls.cost > player.gold:
+        if hero_cls.cost > user.gold:
             option.selectable = option.highlight = False
         menu.append(option)
 
@@ -296,15 +486,15 @@ menus['Buy Heroes'] = EntitiesMenu(
 def _buy_items_select_callback(menu, player_index, choice):
     """Buy Items menu's select_callback function."""
 
-    player = Player(player_index)
-    player.hero.items.append(choice.value())
-    player.cash -= choice.value.cost
+    user = users[userid_from_index(player_index)]
+    user.hero.items.append(choice.value())
+    user.get_entity().cash -= choice.value.cost
 
 
 def _buy_items_build_callback(menu, player_index):
     """Buy Items menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.clear()
     for item in menu.entities:
         option = PagedOption(
@@ -318,7 +508,7 @@ def _buy_items_build_callback(menu, player_index):
             ),
             item
         )
-        if item.cost > player.gold:
+        if item.cost > user.gold:
             option.selectable = option.highlight = False
         menu.append(option)
 
@@ -336,17 +526,17 @@ menus['Buy Items'] = EntitiesMenu(
 def _sell_items_select_callback(menu, player_index, choice):
     """Sell Items menu's select_callback function."""
 
-    player = Player(player_index)
-    player.hero.items.remove(choice.value)
-    player.cash += choice.value.sell_value
+    user = users[userid_from_index(player_index)]
+    user.hero.items.remove(choice.value)
+    user.get_entity().cash += choice.value.sell_value
 
 
 def _sell_items_build_callback(menu, player_index):
     """Sell Items menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.clear()
-    for item in player.hero.items:
+    for item in user.hero.items:
         menu.append(PagedOption('{name} (+${sell_value})'.format(
             name=item.name,
             sell_value=item.sell_value
@@ -376,14 +566,14 @@ def _entity_categories_select_callback(menu, player_index, choice):
 def _buy_hero_categories_build_callback(menu, player_index):
     """Buy Hero Categories menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.entities = []
 
     for hero_cls in Hero.get_subclasses():
-        if find_element(player.heroes, 'cls_id', hero_cls.cls_id):
+        if find_element(user.heroes, 'cls_id', hero_cls.cls_id):
             continue
         elif (hero_cls.allowed_users
-                and player.steamid not in hero_cls.allowed_users):
+                and user.steamid not in hero_cls.allowed_users):
             continue
         menu.entities.append(hero_cls)
 
@@ -407,14 +597,14 @@ def _buy_hero_categories_build_callback(menu, player_index):
 def _buy_item_categories_build_callback(menu, player_index):
     """Buy Hero Categories menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
     menu.entities = []
 
     for item in Item.get_subclasses():
-        if (len(tuple(find_elements(player.hero.items, 'cls_id', item.cls_id)))
+        if (len(tuple(find_elements(user.hero.items, 'cls_id', item.cls_id)))
                 >= item.limit):
             continue
-        elif (item.allowed_users and player.steamid not in item.allowed_users):
+        elif (item.allowed_users and user.steamid not in item.allowed_users):
             continue
         menu.entities.append(item)
 
@@ -457,13 +647,12 @@ def _hero_buy_info_select_callback(menu, player_index, choice):
     """Hero Buy Info menu's select_callback function."""
 
     if choice.value == 7:
-        player = Player(player_index)
-        if player.gold > menu.hero.cost:
+        user = users[userid_from_index(player_index)]
+        if user.gold > menu.hero.cost:
             hero = menu.hero()
-            player.gold -= hero.cost
-            player.heroes.append(hero)
-            player.hero = hero
-            print('changed hero to '+hero.name)  # TODO: Temporary
+            user.gold -= hero.cost
+            user.heroes.append(hero)
+            user.hero = hero
 
 
 def _hero_buy_info_build_callback(menu, player_index):
@@ -503,9 +692,7 @@ def _hero_buy_info_build_callback(menu, player_index):
 def _hero_owned_info_select_callback(menu, player_index, choice):
     """Hero Owned Info menu's select_callback function."""
     if choice.value == 7:
-        player = Player(player_index)
-        player.hero = menu.hero
-        print('changed hero to '+player.hero.name)
+        users[userid_from_index(player_index)].hero = menu.hero
 
 
 def _hero_owned_info_build_callback(menu, player_index):
@@ -577,10 +764,10 @@ menus['Playerinfo'] = PlayerMenu(
     build_callback=_playerinfo_build_callback,
 )
 
+
 # ======================================================================
 # >> SHIFT ATTR MENU
 # ======================================================================
-
 
 def _shift_attr_select_callback(menu, player_index, choice):
     """Shift Attr menu's select_callback function."""
@@ -674,9 +861,8 @@ def _players_build_callback(menu, player_index):
     """Players menu's build_callback function."""
 
     menu.clear()
-    for index in PlayerIter():
-        player = Player(index)
-        menu.append(PagedOption(player.name, player))
+    for user in users.values():
+        menu.append(PagedOption(user.get_entity().name, user))
 
 
 menus['Admin Players Menu'] = ForwardMenu(
@@ -693,10 +879,10 @@ menus['Playerinfo Choose'] = ForwardMenu(
     build_callback=_players_build_callback
 )
 
+
 # ======================================================================
 # >> ADMIN MENU
 # ======================================================================
-
 
 def _admin_select_callback(menu, player_index, choice):
     """Admin menu's select_callback function."""
@@ -708,11 +894,11 @@ def _admin_select_callback(menu, player_index, choice):
 def _admin_build_callback(menu, player_index):
     """Admin menu's build_callback function."""
 
-    player = Player(player_index)
+    user = users[userid_from_index(player_index)]
 
     menu.clear()
 
-    if player.steamid in admins:
+    if user.steamid in admins:
         menu.extend([
             Text('Admin'),
             SimpleOption(1, 'Player Management', menus['Admin Players Menu'])
@@ -725,10 +911,10 @@ menus['Admin'] = SimpleMenu(
     build_callback=_admin_build_callback
 )
 
+
 # ======================================================================
 # >> MAIN MENU
 # ======================================================================
-
 
 def _main_select_callback(menu, player_index, choice):
     """Main menu's select_callback function."""
@@ -740,8 +926,7 @@ def _main_select_callback(menu, player_index, choice):
 def _main_build_callback(menu, player_index):
     """Main menu's build_callback function."""
 
-    player = Player(player_index)
-    menu[1].text.get_string(gold=player.gold)
+    menu[1].text.get_string(gold=users[userid_from_index(player_index)].gold)
 
 
 menus['Main'] = SimpleMenu(

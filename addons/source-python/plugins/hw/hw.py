@@ -3,10 +3,10 @@
 # ======================================================================
 
 # Hero-Wars
-from hw.players import Player
+from hw.users import User
+from hw.users import users
 
-from hw.database import setup_database
-from hw.database import save_player_data
+import hw.database
 
 from hw.entities import Hero
 
@@ -14,6 +14,7 @@ from hw.events import Hero_Level_Up
 from hw.events import Player_Ultimate
 
 from hw.tools import get_messages
+from hw.tools import find_element
 
 from hw.menus import menus
 
@@ -22,17 +23,12 @@ from hw.items import *
 
 import hw.configs as cfg
 
-# Xtend
-from xtend.tools import find_element
-
 # Source.Python
 from events import Event
 
 from players.helpers import userid_from_playerinfo
 from players.helpers import index_from_playerinfo
 from players.helpers import index_from_userid
-
-from filters.players import PlayerIter
 
 from engines.server import engine_server
 
@@ -52,8 +48,8 @@ from commands.client import ClientCommand
 # Plugin info
 info = PluginInfo()
 info.name = 'Hero-Wars'
-info.author = 'Mahi, Kamiqawa'
-info.version = '0.4.5'
+info.author = 'Mahi'
+info.version = '0.6.0'
 info.basename = 'hw'
 info.variable = "{0}_version".format(info.basename)
 
@@ -93,7 +89,9 @@ def load():
     for cls_id in cfg.starting_heroes:
         if not find_element(heroes, 'cls_id', cls_id):
             raise ValueError('Invalid starting hero: {0}'.format(cls_id))
-    setup_database(cfg.database_path)
+
+    # Setup database
+    hw.database.setup()
 
     # Restart the game
     engine_server.server_command('mp_restartgame 1\n')
@@ -105,19 +103,19 @@ def load():
 def unload():
     """Save all unsaved data into database."""
 
-    # Save each player's data into the database
-    for index in PlayerIter():
-        save_player_data(cfg.database_path, Player(index))
+    # Save each user's data into the database
+    for user in users.values():
+        hw.database.save_user_data(user)
 
     # Send a message to everyone
     other_messages['Plugin Unloaded'].send()
 
 
-def give_gold(player, gold_key):
-    """Gives player gold and sends him a message about it.
+def give_gold(user, gold_key):
+    """Gives user gold and sends him a message about it.
 
     Args:
-        player: Player who to give gold to
+        user: User who to give gold to
         gold_key: Key used for finding the gold value and translation
     """
 
@@ -125,38 +123,39 @@ def give_gold(player, gold_key):
         return
     gold = cfg.gold_values.get(gold_key, 0)
     if gold > 0:
-        player.gold += gold
-        gold_messages[gold_key].send(player.index, gold=gold)
+        user.gold += gold
+        gold_messages[gold_key].send(index_from_userid(user.userid), gold=gold)
 
 
-def give_exp(player, exp_key):
-    """Gives player exp and sends him a message about it.
+def give_exp(user, exp_key):
+    """Gives user exp and sends him a message about it.
 
     Args:
-        player: Player who to give exp to
+        user: User who to give exp to
         exp_key: Key used for finding the exp value and translation
     """
 
     exp = cfg.exp_values.get(exp_key, 0)
     if exp > 0:
-        player.hero.exp += exp
-        exp_messages[exp_key].send(player.index, exp=exp)
+        user.hero.exp += exp
+        exp_messages[exp_key].send(index_from_userid(user.userid), exp=exp)
 
 
-def give_team_exp(player, exp_key):
-    """Gives exp for player's teammates.
+def give_team_exp(user, exp_key):
+    """Gives exp for user's teammates.
 
     Args:
-        player: Player whose teammates to give exp to
+        user: User whose teammates to give exp to
         exp_key: Key used for finding the exp value and translation
     """
 
     # Give all his teammates exp
-    team = player.team == 2 and 't' or 'ct'
-    for userid in PlayerIter(is_filters=team, return_types='userid'):
-        if userid != player.userid:
-            teammate = get_player(userid)
-            give_exp(teammate, exp_key)
+    team = user.get_entity().team == 2 and 't' or 'ct'
+    for userid in users:
+        if userid != user.userid:
+            player = users[userid].get_entity()
+            if player.team == team:
+                give_exp(users[userid], exp_key)
 
 
 # ======================================================================
@@ -192,42 +191,51 @@ def client_command_menu(playerinfo, command):
 
 @Event
 def player_disconnect(game_event):
-    """Saves player's data upon disconnect."""
+    """Saves user's data upon disconnect."""
 
     userid = game_event.get_int('userid')
-    player = Player(index_from_userid(userid))
-    save_player_data(cfg.database_path, player)
+    user = users.get(userid)
+    if user:
+        hw.database.save_user_data(user)
+        del users[userid]
 
 
 @Event
 def player_spawn(game_event):
-    """Saves players' data.
+    """Saves user's data.
 
     Also executes spawn skills and shows current exp/level progress.
     """
 
-    # Get the player
+    # Get the user
     userid = game_event.get_int('userid')
-    player = Player(index_from_userid(userid))
+    user = users.get(userid)
 
-    # Save his data
-    save_player_data(cfg.database_path, player)
+    # Create a new user if one doesn't exist already, and load his data
+    if not user:
+        user = User(userid)
+        users[userid] = user
+        hw.database.load_user_data(user)
 
-    # Get player's hero
-    hero = player.hero
+    # Save user's data
+    hw.database.save_user_data(user)
+
+    # Get user's hero and entity
+    hero = user.hero
+    entity = user.get_entity()
 
     # Show current exp and level
     other_messages['Hero Status'].send(
-        player.index,
+        entity.index,
         name=hero.name,
         level=hero.level,
         current=hero.exp,
         required=hero.required_exp
     )
 
-    # Execute spawn skills if the player's on a valid team
-    if player.team > 1:
-        hero.execute_skills('player_spawn', player=player)
+    # Execute spawn skills if the user's on a valid team
+    if entity.team > 1:
+        hero.execute_skills('player_spawn', user=user)
 
 
 @Event
@@ -237,15 +245,10 @@ def player_death(game_event):
     Also gives exp from kill and assist.
     """
 
-    # Get the userids from attacker, defender and assister
-    defender_id = game_event.get_int('userid')
-    attacker_id = game_event.get_int('attacker')
-    assister_id = game_event.get_int('assister')
-
-    # Get the player instances
-    defender = Player(index_from_userid(defender_id))
-    attacker = Player(index_from_userid(attacker_id)) if attacker_id else None
-    assister = Player(index_from_userid(assister_id)) if assister_id else None
+    # Get the users
+    defender = users[game_event.get_int('userid')]
+    attacker = users.get(game_event.get_int('attacker'))
+    assister = users.get(game_event.get_int('assister'))
 
     # Create the event arguments dict
     eargs = {
@@ -257,18 +260,19 @@ def player_death(game_event):
     }
 
     # If it was a suicide
-    if not attacker or defender.index == attacker.index:
+    if (not attacker or
+            defender.get_entity().index == attacker.get_entity().index):
 
         # Execute suicide skills
         defender.hero.execute_skills(
-            'player_suicide', player=defender, **eargs)
+            'player_suicide', user=defender, **eargs)
 
     # If it wasn't...
     else:
 
         # Execute kill and death skills
-        attacker.hero.execute_skills('player_kill', player=attacker, **eargs)
-        defender.hero.execute_skills('player_death', player=defender, **eargs)
+        attacker.hero.execute_skills('player_kill', user=attacker, **eargs)
+        defender.hero.execute_skills('player_death', user=defender, **eargs)
 
         # Give attacker exp from kill and headshot
         give_exp(attacker, 'Kill')
@@ -282,7 +286,7 @@ def player_death(game_event):
     if assister:
 
         # Execute assist skills
-        assister.hero.execute_skills('player_assist', player=assister, **eargs)
+        assister.hero.execute_skills('player_assist', user=assister, **eargs)
 
         # Give assister exp and gold
         give_exp(assister, 'Assist')
@@ -298,13 +302,9 @@ def player_death(game_event):
 def player_hurt(game_event):
     """Executes attack and defend skills."""
 
-    # Get attacker's and defender's userids
-    defender_id = game_event.get_int('userid')
-    attacker_id = game_event.get_int('attacker')
-
-    # Get the player instances
-    defender = Player(index_from_userid(defender_id))
-    attacker = Player(index_from_userid(attacker_id)) if attacker_id else None
+    # Get attacker and defender
+    defender = users[game_event.get_int('userid')]
+    attacker = users.get(game_event.get_int('attacker'))
 
     # Create event arguments dict
     eargs = {
@@ -317,24 +317,25 @@ def player_hurt(game_event):
 
     # Execute attack and defend skills
     if attacker:
-        attacker.hero.execute_skills('player_attack', player=attacker, **eargs)
-    defender.hero.execute_skills('player_defend', player=defender, **eargs)
+        attacker.hero.execute_skills('player_attack', user=attacker, **eargs)
+    defender.hero.execute_skills('player_defend', user=defender, **eargs)
 
 
 @Event
 def player_jump(game_event):
     """Executes jump skills."""
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    player.hero.execute_skills('player_jump', player=player)
+    user = users[game_event.get_int('userid')]
+    user.hero.execute_skills('player_jump', user=user)
 
 
 @Event
 def player_say(game_event):
     """Executes ultimate skills and opens the menu."""
 
-    # Get the player and the text
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    # Get the user, index and the text
+    user = users[game_event.get_int('userid')]
+    index = index_from_userid(userid)
     text = game_event.get_string('text')
 
     # If text doesn't begin with the prefix, it's useless for us
@@ -347,19 +348,19 @@ def player_say(game_event):
     # If the text was '!ultimate', execute ultimate skills
     if text2 == 'ultimate':
         Player_Ultimate(
-            index=player.index,
-            userid=player.userid
+            index=index,
+            userid=user.userid
         ).fire()
 
     # If the text was '!hw' or '!hw', open Main menu
     elif text2 in ('hw', 'hw'):
-        menus['Main'].send(player.index)
+        menus['Main'].send(index)
 
     elif text2 == 'admin':
-        menus['Admin'].send(player.index)
+        menus['Admin'].send(index)
 
     # Finally, execute hero's player_say skills
-    player.hero.execute_skills('player_say', player=player, text=text)
+    user.hero.execute_skills('player_say', user=user, text=text)
 
 
 @Event
@@ -372,38 +373,30 @@ def round_end(game_event):
     # Get the winning team
     winner = game_event.get_int('winner')
 
-    # Loop through all the players' userids
-    for index in PlayerIter(is_filters=('ct', 't')):
+    # Loop through all the users
+    for userid, user in users.items():
 
-        # Get the player
-        player = Player(index)
-
-        # Give player win exp and gold
-        if player.get_team() == winner:
-            give_exp(player, 'Round Win')
-            give_gold(player, 'Round Win')
+        # Give user win exp and gold
+        if user.get_entity().team == winner:
+            give_exp(user, 'Round Win')
+            give_gold(user, 'Round Win')
 
         # Or loss exp and gold
         else:
-            give_exp(player, 'Round Loss')
-            give_gold(player, 'Round Loss')
+            give_exp(user, 'Round Loss')
+            give_gold(user, 'Round Loss')
 
         # Execute hero's round_end skills
-        player.hero.execute_skills('round_end', player=player, winner=winner)
+        user.hero.execute_skills('round_end', user=user, winner=winner)
 
 
 @Event
 def round_start(game_event):
     """Executes round_start skills."""
 
-    # Loop through all the players' userids
-    for index in PlayerIter(is_filters=('ct', 't')):
-
-        # Get the player
-        player = Player(index)
-
-        # Execute hero's round_end skills
-        player.hero.execute_skills('round_start', player=player, winner=winner)
+    for userid, user in users.items():
+        user.hero.execute_skills(
+            'round_start', user=user, winner=game_event.get_int('winner'))
 
 
 @Event
@@ -413,12 +406,11 @@ def bomb_planted(game_event):
     Also executes bomb_planted skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    give_exp(player, 'Bomb Plant')
-    give_team_exp(player, 'Bomb Plant Team')
-
-    # Execute hero's bomb_planted skills
-    player.hero.execute_skills('bomb_planted', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        give_exp(user, 'Bomb Plant')
+        give_team_exp(user, 'Bomb Plant Team')
+        user.hero.execute_skills('bomb_planted', user=user)
 
 
 @Event
@@ -428,12 +420,11 @@ def bomb_exploded(game_event):
     Also executes bomb_exploded skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    give_exp(player, 'Bomb Explode')
-    give_team_exp(player, 'Bomb Explode Team')
-
-    # Execute hero's bomb_exploded skills
-    player.hero.execute_skills('bomb_exploded', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        give_exp(user, 'Bomb Explode')
+        give_team_exp(user, 'Bomb Explode Team')
+        user.hero.execute_skills('bomb_exploded', user=user)
 
 
 @Event
@@ -443,12 +434,11 @@ def bomb_defused(game_event):
     Also executes bomb_defused skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    give_exp(player, 'Bomb Defuse')
-    give_team_exp(player, 'Bomb Defuse Team')
-
-    # Execute hero's bomb_defused skills
-    player.hero.execute_skills('bomb_defused', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        give_exp(user, 'Bomb Defuse')
+        give_team_exp(user, 'Bomb Defuse Team')
+        user.hero.execute_skills('bomb_defused', user=user)
 
 
 @Event
@@ -458,12 +448,11 @@ def hostage_follows(game_event):
     Also executes hostage_follows skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    give_exp(player, 'Hostage Pick Up')
-    give_team_exp(player, 'Hostage Pick Up Team')
-
-    # Execute hero's hostage_follows skills
-    player.hero.execute_skills('hostage_follows', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        give_exp(user, 'Hostage Pick Up')
+        give_team_exp(user, 'Hostage Pick Up Team')
+        user.hero.execute_skills('hostage_follows', user=user)
 
 
 @Event
@@ -473,12 +462,11 @@ def hostage_rescued(game_event):
     Also executes hostage_rescued skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    give_exp(player, 'Hostage Rescue')
-    give_team_exp(player, 'Hostage Rescue Team')
-
-    # Execute hero's hostage_rescued skills
-    player.hero.execute_skills('hostage_rescued', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        give_exp(user, 'Hostage Rescue')
+        give_team_exp(user, 'Hostage Rescue Team')
+        user.hero.execute_skills('hostage_rescued', user=user)
 
 
 @Event
@@ -488,16 +476,15 @@ def hero_pre_level_up(game_event):
     # Raise hero_level_up event
     hero_id = game_event.get_int('id')
     owner = None
-    for index in PlayerIter():
-        player = Player(index)
-        if id(player.hero) == hero_id:
-            owner = player
+    for user in users.values():
+        if id(user.hero) == hero_id:
+            owner = user
             break
     if owner:
         Hero_Level_Up(
             cls_id=game_event.get_string('cls_id'),
             id=hero_id,
-            player_index=owner.index,
+            player_index=owner.get_entity().index,
             player_userid=owner.userid
         ).fire()
 
@@ -509,13 +496,13 @@ def hero_level_up(game_event):
     Also executes hero_level_up skills.
     """
 
-    # Get the player and his hero
-    player = Player(index_from_userid(game_event.get_int('player_userid')))
+    # Get the user's index and his hero
+    index = index_from_userid(game_event.get_int('userid'))
     hero = player.hero
 
     # Send hero's status via chat
     other_messages['Hero Status'].send(
-        player.index,
+        index,
         name=hero.name,
         level=hero.level,
         current=hero.exp,
@@ -524,16 +511,17 @@ def hero_level_up(game_event):
 
     # Open current hero info menu (Kamiqawa, what?) to let the player
     # spend skill points
-    menus['Current Hero'].send(player.index)
+    menus['Current Hero'].send(index)
 
-    # Execute player_level_up skills
-    player.hero.execute_skills('hero_level_up', player=player, hero=hero)
+    # Execute user's skills
+    user = users.get(game_event.get_int('userid'))
+    user.hero.execute_skills('hero_level_up', user=user, hero=hero)
 
 
 @Event
 def player_ultimate(game_event):
     """Executes ultimate skills."""
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
-    player.hero.execute_skills(
-        'player_ultimate', player=player)
+    user = users.get(game_event.get_int('userid'))
+    if user:
+        user.hero.execute_skills('player_ultimate', user=user)

@@ -5,6 +5,9 @@
 # Python
 import os
 
+# Source.Python
+import players.entity
+
 
 # ======================================================================
 # >> CONFIGURATIONS
@@ -15,6 +18,7 @@ admins = (
     'STEAM_0:1:17441574',  # Kamiqawa
     'STEAM_0:0:20178479'  # Mahi
 )
+
 
 # Prefix needed for chat commands
 chat_command_prefix = '!'
@@ -69,7 +73,7 @@ gold_values = {
 show_gold_messages = True
 
 
-# Starting heroes for when a player joins the server for the first time
+# Starting heroes for when an user joins the server for the first time
 # > Use class names for identifying the Hero classes
 starting_heroes = (
     'TestHero1',
@@ -91,3 +95,7 @@ item_sell_value_multiplier = 0.5
 # Exp algorithm for required exp to level up
 def exp_algorithm(level):
     return 100 + level * 20
+
+
+# PlayerEntity class used for hw.users.User.get_entity() method
+player_entity_class = players.entity.PlayerEntity
