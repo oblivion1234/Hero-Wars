@@ -97,5 +97,5 @@ def exp_algorithm(level):
     return 100 + level * 20
 
 
-# PlayerEntity class used for hw.users.User.get_entity() method
+# PlayerEntity class used as a super class of Hero-Wars's Player class
 player_entity_class = players.entity.PlayerEntity

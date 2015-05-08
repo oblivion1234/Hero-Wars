@@ -49,7 +49,7 @@ class Entity(object):
         max_level: Maximum level the entity can be leveled to
         enabled: Is the entity enabled on the server
         required_level: Required level before the entity can be used
-        allowed_users: A private set of users who can use the entity
+        allowed_users: List of steamids of those who can use the entity
     """
 
     # Defaults
@@ -59,10 +59,10 @@ class Entity(object):
     cost = 0
     max_level = 10000
     enabled = True
-    allowed_users = tuple()
+    allowed_players = list()
 
     @classproperty
-    def cls_id(cls):
+    def cid(cls):
         """Gets the class' id.
 
         Returns the name of the class or instance's class.
@@ -199,7 +199,7 @@ class Hero(Entity):
 
         self._exp = 0
         Entity.level.fset(self, level)  # Call to Entity's level setter
-        Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
+        Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
 
     @property
     def exp(self):
@@ -251,7 +251,7 @@ class Hero(Entity):
 
             # Fire the level up event
             if self.level > old_lvl:
-                Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
+                Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
 
     @property
     def skill_points(self):

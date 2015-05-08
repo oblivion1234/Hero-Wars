@@ -4,6 +4,7 @@
 
 # Hero-Wars
 from hw.database import save_hero_data
+from hw.database import load_player_data
 
 from hw.entities import Hero
 
@@ -14,7 +15,6 @@ from hw.configs import player_entity_class
 
 # Source.Python
 from players.helpers import playerinfo_from_userid
-from players.helpers import index_from_userid
 
 from messages import SayText2
 
@@ -23,17 +23,15 @@ from messages import SayText2
 # >> GLOBALS
 # ======================================================================
 
-users = {
-    # userid: User
-}
+_player_data = {}
 
 
 # ======================================================================
 # >> CLASSES
 # ======================================================================
 
-class User(object):
-    """User class for Hero-Wars related activity and data.
+class Player(player_entity_class):
+    """Player class for Hero-Wars related activity and data.
 
     Attributes:
         gold: Player's Hero-Wars gold, used to purchase heroes and items
@@ -41,39 +39,33 @@ class User(object):
         heroes: List of owned heroes
     """
 
-    def __init__(self, userid):
-        """Initializes a new User instance.
+    def __init__(self, index):
+        """Initializes a new player instance.
 
         Args:
-            userid: Userid of the user
+            index: Index of the player
         """
 
-        self.userid = userid
-        self._gold = 0
-        self._hero = None
-        self.heroes = []
+        if self.userid not in _player_data:
+            _player_data[self.userid] = {
+                'gold': 0,
+                'hero': None,
+                'heroes': []
+            }
 
-        # Make sure the player gets his starting heroes
-        heroes = Hero.get_subclasses()
-        for cls_id in starting_heroes:
-            hero_cls = find_element(heroes, 'cls_id', cls_id)
-            if hero_cls and not find_element(self.heroes, 'cls_id', cls_id):
-                self.heroes.append(hero_cls())
+            # Load player's data
+            load_player_data(self)
 
-        # Make sure the player has a current hero
-        if not self.hero and self.heroes:
-            self.hero = self.heroes[0]
+            # Make sure the player gets his starting heroes
+            heroes = Hero.get_subclasses()
+            for cid in starting_heroes:
+                hero_cls = find_element(heroes, 'cid', cid)
+                if hero_cls and not find_element(self.heroes, 'cid', cid):
+                    self.heroes.append(hero_cls())
 
-    @property
-    def steamid(self):
-        """Returns user's steamid."""
-
-        return playerinfo_from_userid(self.userid).get_networkid_string()
-
-    def get_entity(self):
-        """Returns a PlayerEntity instance from user."""
-
-        return player_entity_class(index_from_userid(self.userid))
+            # Make sure the player has a hero
+            if not self.hero:
+                self.hero = self.heroes[0]
 
     @property
     def gold(self):
@@ -83,7 +75,7 @@ class User(object):
             Player's gold
         """
 
-        return self._gold
+        return _player_data[self.userid]['gold']
 
     @gold.setter
     def gold(self, gold):
@@ -95,7 +87,7 @@ class User(object):
 
         if gold < 0:
             raise ValueError('Attempt to set negative gold for a player.')
-        self._gold = gold
+        _player_data[self.userid]['gold'] = gold
 
     @property
     def hero(self):
@@ -105,7 +97,7 @@ class User(object):
             Player's hero
         """
 
-        return self._hero
+        return _player_data[self.userid]['hero']
 
     @hero.setter
     def hero(self, hero):
@@ -123,8 +115,8 @@ class User(object):
 
         # Make sure player owns the hero
         if hero not in self.heroes:
-            raise ValueError('Hero {cls_id} not owned by {steamid}.'.format(
-                cls_id=hero.cls_id, steamid=self.steamid
+            raise ValueError('Hero {cid} not owned by {steamid}.'.format(
+                cid=hero.cid, steamid=self.steamid
             ))
 
         # If player has a current hero
@@ -139,13 +131,14 @@ class User(object):
                     self.hero.items.remove(item)
 
         # Change to the new hero
-        self._hero = hero
+        _player_data[self.userid]['hero'] = hero
 
-    def message(self, text):
-        """Sends a message to an user through SayText2.
+    @property
+    def heroes(self):
+        """Getter for plaeyr's heroes.
 
-        Args:
-            text: Text to send
+        Returns:
+            A list of player's heroes.
         """
 
-        SayText2(message=text).send(index_from_userid(self.userid))
+        return _player_data[self.userid]['heroes']

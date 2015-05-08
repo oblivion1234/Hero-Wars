@@ -28,12 +28,12 @@ __all__ = (
 # ======================================================================
 
 class Hero_Pre_Level_Up(CustomEvent):
-    cls_id = StringVariable("Hero's class' id")
+    cid = StringVariable("Hero's class' id")
     id = LongVariable("Hero's unique Python id")
 
 
 class Hero_Level_Up(CustomEvent):
-    cls_id = StringVariable("Hero's class' id")
+    cid = StringVariable("Hero's class' id")
     id = LongVariable("Hero's unique Python id")
     player_index = ShortVariable("Player's index")
     player_userid = ShortVariable("Player's userid")
