@@ -486,7 +486,8 @@ def hero_level_up(game_event):
     """
 
     # Get the player and his hero
-    player = Player(game_event.get_int('index'))
+    index = game_event.get_int('player_index')
+    player = Player(index)
     hero = player.hero
 
     # Send hero's status via chat
