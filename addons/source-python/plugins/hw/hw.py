@@ -11,6 +11,7 @@ from hw.entities import Hero
 
 from hw.events import Hero_Level_Up
 from hw.events import Player_Ultimate
+from hw.events import load as load_events
 
 from hw.tools import get_messages
 from hw.tools import find_element
@@ -89,10 +90,13 @@ def load():
         raise NotImplementedError('No starting heroes set.')
     for cid in cfg.starting_heroes:
         if not find_element(heroes, 'cid', cid):
-            raise ValueError('Invalid starting hero: {0}'.format(cid))
+            raise ValueError('Invalid starting hero cid: {0}'.format(cid))
 
     # Setup database
     hw.database.setup()
+
+    # Load Hero-Wars events
+    load_events()
 
     # Restart the game
     engine_server.server_command('mp_restartgame 1\n')
@@ -109,9 +113,9 @@ def unload():
         player = Player(index)
         hw.database.save_player_data(player)
 
-    # COmmit and close
-    hw.database.database.commit()
-    hw.database.database.close()
+    # Commit and close
+    hw.database.connection.commit()
+    hw.database.connection.close()
 
     # Send a message to everyone
     other_messages['Plugin Unloaded'].send()
@@ -462,7 +466,7 @@ def hero_pre_level_up(game_event):
     """Fetches the player and raises the Hero_Level_Up event."""
 
     # Raise hero_level_up event
-    hero_id = game_event.get_int('id')
+    hero_id = int(game_event.get_string('id'))
     owner = None
     for index in PlayerIter():
         player = Player(index)
@@ -472,7 +476,7 @@ def hero_pre_level_up(game_event):
     if owner:
         Hero_Level_Up(
             cid=game_event.get_string('cid'),
-            id=hero_id,
+            id=str(hero_id),
             player_index=player.index,
             player_userid=player.userid
         ).fire()

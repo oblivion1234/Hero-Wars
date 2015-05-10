@@ -8,7 +8,6 @@ from events.custom import CustomEvent
 from events.resource import ResourceFile
 from events.variable import StringVariable
 from events.variable import ShortVariable
-from events.variable import LongVariable
 
 
 # ======================================================================
@@ -18,8 +17,7 @@ from events.variable import LongVariable
 __all__ = (
     'Hero_Pre_Level_Up',
     'Hero_Level_Up',
-    'Player_Ultimate',
-    'Player_Pre_Hurt'
+    'Player_Ultimate'
 )
 
 
@@ -29,12 +27,12 @@ __all__ = (
 
 class Hero_Pre_Level_Up(CustomEvent):
     cid = StringVariable("Hero's class' id")
-    id = LongVariable("Hero's unique Python id")
+    id = StringVariable("Hero's unique Python id")
 
 
 class Hero_Level_Up(CustomEvent):
     cid = StringVariable("Hero's class' id")
-    id = LongVariable("Hero's unique Python id")
+    id = StringVariable("Hero's unique Python id")
     player_index = ShortVariable("Player's index")
     player_userid = ShortVariable("Player's userid")
 
@@ -45,16 +43,13 @@ class Player_Ultimate(CustomEvent):
 
 
 # ======================================================================
-# >> CREATE RESOURCE FILES
+# >> CREATE RESOURCE FILE
 # ======================================================================
 
-for event_cls in (
-        Hero_Pre_Level_Up,
-        Hero_Level_Up,
-        Player_Ultimate):
+def load():
+    """Create a resource file upon plugin loading."""
     resource_file = ResourceFile(
-        'hw/{0}'.format(event_cls.__name__.lower()),
-        event_cls
+        'hw', Hero_Pre_Level_Up, Hero_Level_Up, Player_Ultimate
     )
     resource_file.write()
     resource_file.load_events()

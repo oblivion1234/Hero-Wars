@@ -199,7 +199,7 @@ class Hero(Entity):
 
         self._exp = 0
         Entity.level.fset(self, level)  # Call to Entity's level setter
-        Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
+        Hero_Pre_Level_Up(cid=self.cid, id=str(id(self))).fire()
 
     @property
     def exp(self):

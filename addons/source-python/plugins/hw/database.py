@@ -18,7 +18,7 @@ from contextlib import closing
 # >> GLOBALS
 # ======================================================================
 
-database = None
+connection = None
 
 
 # ======================================================================
@@ -28,9 +28,9 @@ database = None
 def setup():
     """Creates the Hero-Wwars tables into the database."""
 
-    global database
-    database = sqlite3.connect(database_path)
-    with closing(database.cursor()) as cursor:
+    global connection
+    connection = sqlite3.connect(database_path)
+    with closing(connection.cursor()) as cursor:
         cursor.execute("""CREATE TABLE IF NOT EXISTS players (
             steamid TEXT PRIMARY KEY,
             gold INTEGER,
@@ -59,7 +59,7 @@ def save_player_data(player):
         player: player whose data to save
     """
 
-    with closing(database.cursor()) as cursor:
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "INSERT OR REPLACE INTO players VALUES (?, ?, ?)",
             (player.steamid, player.gold, player.hero.cid)
@@ -75,7 +75,7 @@ def save_hero_data(steamid, hero):
         hero: Hero whose data to save
     """
 
-    with closing(database.cursor()) as cursor:
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "INSERT OR REPLACE INTO heroes VALUES (?, ?, ?, ?)",
             (steamid, hero.cid, hero.level, hero.exp)
@@ -85,7 +85,7 @@ def save_hero_data(steamid, hero):
                 "INSERT OR REPLACE INTO skills VALUES (?, ?, ?, ?)",
                 (steamid, hero.cid, skill.cid, skill.level)
             )
-    database.commit()
+    connection.commit()
 
 
 def load_player_data(player):
@@ -95,7 +95,7 @@ def load_player_data(player):
         player: player whose data to load
     """
 
-    with closing(database.cursor()) as cursor:
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "SELECT gold, hero_cid FROM players WHERE steamid=?",
             (player.steamid, )
@@ -130,7 +130,7 @@ def load_hero_data(steamid, hero):
         hero: Hero whose data to load
     """
 
-    with closing(database.cursor()) as cursor:
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "SELECT level, exp FROM heroes WHERE steamid=? AND cid=?",
             (steamid, hero.cid)
