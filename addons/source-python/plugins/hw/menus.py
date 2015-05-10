@@ -5,6 +5,7 @@
 # Hero-Wars
 from hw.tools import find_element
 from hw.tools import find_elements
+from hw.tools import split_string
 
 from hw.tools import shiftattr
 
@@ -34,6 +35,8 @@ from filters.players import PlayerIter
 # ======================================================================
 
 _TR = LangStrings('hw/menus')
+
+_description_width = 50
 
 menus = {}
 
@@ -312,9 +315,9 @@ def _current_hero_select_callback(menu, player_index, choice):
             skill.level = 0
     else:
         skill = choice.value
-        if (skill.cost <= player.hero.skill_points
-                and skill.required_level <= player.hero.level
-                and skill.level < skill.max_level):
+        if (skill.cost <= player.hero.skill_points and
+                skill.required_level <= player.hero.level and
+                (skill.max_level is None or skill.level < skill.max_level)):
             skill.level += 1
     return menu
 
@@ -340,11 +343,14 @@ def _current_hero_build_callback(menu, player_index):
     for skill in hero.skills:
 
         # Set the default arguments for the PagedOption
-        info = '{0}/{1}'.format(skill.level, skill.max_level)
+        info = '{0}{1}'.format(
+            skill.level,
+            '/' + str(skill.max_level) if skill.max_level is not None else ''
+        )
         selectable = True
 
         # If skill is already maxed out
-        if skill.level >= skill.max_level:
+        if skill.max_level is not None and skill.level >= skill.max_level:
             info = ' ({0})'.format(_translate_text(
                 _TR['Maxed'],
                 player_index
@@ -355,7 +361,7 @@ def _current_hero_build_callback(menu, player_index):
         elif skill.required_level > hero.level:
             info += ' ({0})'.format(_translate_text(
                 _TR['Required'].get_string(
-                    required=skill.required_level
+                    req=skill.required_level
                 ),
                 player_index
             ))
@@ -414,8 +420,10 @@ def _owned_heroes_build_callback(menu, player_index):
     menu.clear()
     for hero in player.heroes:
         option = PagedOption(
-            '{0} {1}/{2}'.format(
-                hero.name, hero.level, hero.max_level
+            '{0} {1}{2}'.format(
+                hero.name,
+                hero.level,
+                '/' + str(hero.max_level) if hero.max_level is not None else ''
             ),
             hero
         )
@@ -502,7 +510,9 @@ def _buy_items_build_callback(menu, player_index):
                     _TR['Cost'].get_string(cost=item.cost),
                     player_index
                 ),
-                description=item.description
+                description='\n'.join(
+                    split_string(item.description, _description_width)
+                )
             ),
             item
         )
@@ -665,20 +675,30 @@ def _hero_buy_info_build_callback(menu, player_index):
     for passive in menu.hero.passive_set:
         menu.append(Text('P. {name}\n{description}'.format(
             name=passive.name,
-            description=passive.description
+            description='\n'.join(
+                split_string(passive.description, _description_width)
+            )
         )))
 
     for skill in menu.hero.skill_set:
         menu.append(PagedOption(
             '{name}{max_level}{cost}{req}\n{description}'.format(
                 name=skill.name,
-                max_level=' '+_TR['Max'].get_string(max=skill.max_level),
-                cost=(' '+_TR['Cost'].get_string(cost=skill.cost)
-                    if skill.cost != 1 else ''),
-                req=(' '+_TR['Required'].get_string(
-                    required=skill.required_level)
-                    if skill.required_level != 0 else ''),
-                description=skill.description  # TODO: Split to lines
+                max_level=(
+                    ' ' + _TR['Max'].get_string(max=skill.max_level)
+                    if skill.max_level is not None else ''
+                    ),
+                cost=(
+                    ' ' + _TR['Cost'].get_string(cost=skill.cost)
+                    if skill.cost != 1 else ''
+                    ),
+                req=(
+                    ' ' + _TR['Required'].get_string(req=skill.required_level)
+                    if skill.required_level != 0 else ''
+                    ),
+                description='\n'.join(
+                    split_string(skill.description, _description_width)
+                )
             )
         ))
 
@@ -696,31 +716,44 @@ def _hero_owned_info_select_callback(menu, player_index, choice):
 def _hero_owned_info_build_callback(menu, player_index):
     """Hero Owned Info menu's build_callback function."""
 
+    hero = menu.hero
     menu.clear()
-    menu.title = '{name} {level}/{max_level}'.format(
-        name=menu.hero.name,
-        level=menu.hero.level,
-        max_level=menu.hero.max_level
+    menu.title = '{name} {level}{max_level}'.format(
+        name=hero.name,
+        level=hero.level,
+        max_level='/' + hero.max_level if hero.max_level is not None else ''
     )
 
-    for passive in menu.hero.passive_set:
+    for passive in hero.passive_set:
         menu.append(Text('P. {name}\n{description}'.format(
             name=passive.name,
-            description=passive.description
+            description='\n'.join(
+                split_string(passive.description, _description_width)
+            )
         )))
 
-    for skill in menu.hero.skills:
+    for skill in hero.skills:
         menu.append(PagedOption(
-            '{name} {level}/{max_level}{cost}{req}\n{description}'.format(
+            '{name} {level}{max_level}{cost}{req}\n{description}'.format(
                 name=skill.name,
                 level=skill.level,
-                max_level=skill.max_level,
-                cost=(' '+_TR['Cost'].get_string(cost=skill.cost)
-                    if skill.cost != 1 else ''),
-                req=(' '+_TR['Required'].get_string(
-                    required=skill.required_level)
-                    if skill.required_level != 0 else ''),
-                description=skill.description  # TODO: Split to lines
+                max_level=(
+                    '/' + skill.max_level
+                    if skill.max_level is not None else ''
+                    ),
+                cost=(
+                    ' ' + _TR['Cost'].get_string(cost=skill.cost)
+                    if skill.cost != 1 else ''
+                    ),
+                req=(
+                    ' ' + _TR['Required'].get_string(
+                        req=skill.required_level
+                    )
+                    if skill.required_level != 0 else ''
+                    ),
+                description='\n'.join(
+                    split_string(skill.description, _description_width)
+                )
             )
         ))
 
@@ -750,10 +783,10 @@ def _playerinfo_build_callback(menu, player_index):
     )
 
     for skill in menu.player.hero.skills:
-        menu.append(Text('{name} {cur}/{max}'.format(
+        menu.append(Text('{name} {cur}{max}'.format(
             name=skill.name,
             cur=skill.level,
-            max=skill.max_level
+            max='/' + skill.max_level if skill.max_level is not None else ''
         )))
 
 

@@ -44,7 +44,7 @@ class Entity(object):
     Class Attributes:
         name: Entity's name
         description: Short description of the entity
-        author: Creator/Designer of the entity
+        authors: Creators/Designers of the entity
         cost: How much does the entity cost
         max_level: Maximum level the entity can be leveled to
         enabled: Is the entity enabled on the server
@@ -53,12 +53,12 @@ class Entity(object):
     """
 
     # Defaults
-    name = 'Unnamed Entity'
-    description = 'This is an entity.'
-    authors = 'Unknown'
-    cost = 0
-    max_level = 10000
-    enabled = True
+    name = str()
+    description = str()
+    authors = list()
+    cost = int()
+    max_level = None
+    enabled = bool(True)
     allowed_players = list()
 
     @classproperty
@@ -104,7 +104,7 @@ class Entity(object):
 
         if level < 0:
             raise ValueError('Attempt to set a negative level for an entity.')
-        elif level > self.max_level:
+        elif self.max_level is not None and level > self.max_level:
             raise ValueError(
                 'Attempt to set an entity\'s level over it\'s maximum level.')
         self._level = level
@@ -148,11 +148,8 @@ class Hero(Entity):
     """
 
     # Defaults
-    name = 'Unnamed Hero'
-    description = 'This is a hero.'
     skill_set = tuple()
     passive_set = tuple()
-    cost = 20
     category = default_hero_category
 
     def __init__(self, level=0, exp=0):
@@ -181,7 +178,7 @@ class Hero(Entity):
             Required experience points for leveling up
         """
 
-        if self.level >= self.max_level:
+        if self.max_level is not None and self.level >= self.max_level:
             return 0
         return exp_algorithm(self.level)
 
@@ -226,31 +223,25 @@ class Hero(Entity):
         if exp < 0:
             raise ValueError('Attempt to set negative exp for a hero.')
 
-        # Make sure hero is not already maxed out
-        if self.level >= self.max_level:
-            self._exp = 0
-            return
-
         # If exp differs from current exp
         if exp != self._exp:
 
             # Set the new exp and get old level
             self._exp = exp
-            old_lvl = self.level
+            old_level = self.level
 
             # Increase levels while necessary
-            while (self.exp >= self.required_exp
-                    and self.level < self.max_level):
+            while (self.exp >= self.required_exp and
+                    (self.max_level is None or self.level < self.max_level)):
                 self._exp -= self.required_exp
                 self._level += 1
 
             # Make sure the hero's level is not over the maximum level
-            if self.level >= self.max_level:
-                self._level = self.max_level
-                self._exp = 0
+            if self.max_level is not None and self.level >= self.max_level:
+                self.level = self.max_level
 
             # Fire the level up event
-            if self.level > old_lvl:
+            if self.level > old_level:
                 Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
 
     @property
@@ -330,11 +321,9 @@ class Skill(Entity):
     """
 
     # Defaults
-    name = 'Unnamed Skill'
-    description = 'This is a skill.'
-    cost = 1
-    max_level = 6
-    required_level = 0
+    cost = int(1)
+    max_level = int(6)
+    required_level = int(0)
 
     def execute_method(self, method_name, **eargs):
         """Executes skill's method.

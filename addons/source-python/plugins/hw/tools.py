@@ -235,3 +235,14 @@ def cooldownf(fn, message=None):
 
     # Return the decorator
     return method_decorator
+
+
+def split_string(string, n):
+    """Splits a string every n:th character.
+
+    Args:
+        string: String to split
+        n: Amount of characters per splitted part
+    """
+
+    return [string[i:i + n] for i in range(0, len(string), n)]
