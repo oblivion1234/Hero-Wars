@@ -14,9 +14,7 @@ from hw.configs import starting_heroes
 from hw.configs import player_entity_class
 
 # Source.Python
-from players.helpers import playerinfo_from_userid
-
-from messages import SayText2
+from players.helpers import index_from_userid
 
 
 # ======================================================================
@@ -38,6 +36,16 @@ class Player(player_entity_class):
         hero: Player's hero currently in use
         heroes: List of owned heroes
     """
+
+    @classmethod
+    def from_userid(cls, userid):
+        """Returns a Player instance from an userid.
+
+        Args:
+            userid: Userid of the player
+        """
+
+        return cls(index_from_userid(userid))
 
     def __init__(self, index):
         """Initializes a new player instance.

@@ -28,7 +28,6 @@ from events import Event
 
 from players.helpers import userid_from_playerinfo
 from players.helpers import index_from_playerinfo
-from players.helpers import index_from_userid
 
 from engines.server import engine_server
 
@@ -203,7 +202,7 @@ def player_disconnect(game_event):
     """Saves player's data upon disconnect."""
 
     userid = game_event.get_int('userid')
-    player = Player(index_from_userid(userid))
+    player = Player.from_userid(userid)
     hw.database.save_player_data(player)
 
 
@@ -216,7 +215,7 @@ def player_spawn(game_event):
 
     # Get the player
     userid = game_event.get_int('userid')
-    player = Player(index_from_userid(userid))
+    player = Player.from_userid(userid)
 
     # Save player's data
     hw.database.save_player_data(player)
@@ -246,7 +245,7 @@ def player_death(game_event):
     """
 
     # Get the defender
-    defender = Player(index_from_userid(game_event.get_int('userid')))
+    defender = Player.from_userid(game_event.get_int('userid'))
 
     # Create the event arguments dict
     eargs = {
@@ -255,23 +254,11 @@ def player_death(game_event):
         'weapon': game_event.get_string('weapon')
     }
 
-    # Get the attacker
+    # Get the attacker and execute his and defender's skills
     attacker_id = game_event.get_int('attacker')
-    if attacker_id:
-        attacker = Player(index_from_userid(attacker_id))
+    if attacker_id and attacker_id != defender.userid:
+        attacker = Player.from_userid(attacker_id)
         eargs['attacker'] = attacker
-
-    # If it was a suicide
-    if not attacker_id or defender.userid == attacker.userid:
-
-        # Execute suicide skills
-        defender.hero.execute_skills(
-            'player_suicide', **eargs)
-
-    # If it wasn't...
-    else:
-
-        # Execute kill and death skills
         attacker.hero.execute_skills('player_kill', **eargs)
         defender.hero.execute_skills('player_death', **eargs)
 
@@ -282,6 +269,10 @@ def player_death(game_event):
 
         # Give attacker gold from kill
         give_gold(attacker, 'Kill')
+
+    # Else execute player_suicide skills
+    else:
+        defender.hero.execute_skills('player_suicide', **eargs)
 
     # Finally, remove defender's items
     for item in defender.hero.items:
@@ -294,7 +285,7 @@ def player_hurt(game_event):
     """Executes attack and defend skills."""
 
     # Get the defender
-    defender = Player(index_from_userid(game_event.get_int('userid')))
+    defender = Player.from_userid(game_event.get_int('userid'))
 
     # Create event arguments dict
     eargs = {
@@ -307,7 +298,7 @@ def player_hurt(game_event):
     # Get the attacker and execute his skills
     attacker_id = game_event.get_int('attacker')
     if attacker_id:
-        attacker = Player(index_from_userid(attacker_id))
+        attacker = Player.from_userid(attacker_id)
         eargs['attacker'] = attacker
         attacker.hero.execute_skills('player_attack', **eargs)
 
@@ -319,7 +310,7 @@ def player_hurt(game_event):
 def player_jump(game_event):
     """Executes jump skills."""
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     player.hero.execute_skills('player_jump', player=player)
 
 
@@ -328,7 +319,7 @@ def player_say(game_event):
     """Executes ultimate skills and opens the menu."""
 
     # Get the player and the text
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     text = game_event.get_string('text')
 
     # If text doesn't begin with the prefix, it's useless for us
@@ -403,7 +394,7 @@ def bomb_planted(game_event):
     Also executes bomb_planted skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     give_exp(player, 'Bomb Plant')
     give_team_exp(player, 'Bomb Plant Team')
     player.hero.execute_skills('bomb_planted', player=player)
@@ -416,7 +407,7 @@ def bomb_exploded(game_event):
     Also executes bomb_exploded skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     give_exp(player, 'Bomb Explode')
     give_team_exp(player, 'Bomb Explode Team')
     player.hero.execute_skills('bomb_exploded', player=player)
@@ -429,7 +420,7 @@ def bomb_defused(game_event):
     Also executes bomb_defused skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     give_exp(player, 'Bomb Defuse')
     give_team_exp(player, 'Bomb Defuse Team')
     player.hero.execute_skills('bomb_defused', player=player)
@@ -442,7 +433,7 @@ def hostage_follows(game_event):
     Also executes hostage_follows skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     give_exp(player, 'Hostage Pick Up')
     give_team_exp(player, 'Hostage Pick Up Team')
     player.hero.execute_skills('hostage_follows', player=player)
@@ -455,7 +446,7 @@ def hostage_rescued(game_event):
     Also executes hostage_rescued skills.
     """
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     give_exp(player, 'Hostage Rescue')
     give_team_exp(player, 'Hostage Rescue Team')
     player.hero.execute_skills('hostage_rescued', player=player)
@@ -515,5 +506,5 @@ def hero_level_up(game_event):
 def player_ultimate(game_event):
     """Executes ultimate skills."""
 
-    player = Player(index_from_userid(game_event.get_int('userid')))
+    player = Player.from_userid(game_event.get_int('userid'))
     player.hero.execute_skills('player_ultimate', player=player)
