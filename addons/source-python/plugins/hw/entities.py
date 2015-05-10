@@ -13,6 +13,9 @@ from hw.configs import exp_algorithm
 
 from hw.events import Hero_Pre_Level_Up
 
+# Source.Python
+from messages import SayText2
+
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -125,6 +128,28 @@ class Entity(object):
             (subcls for subcls in get_subclasses(cls) if subcls.enabled),
             key=lambda subcls: subcls.name
         )
+
+    def get_message_prefix(self):
+        """Getter for entity's message prefix.
+
+        Returns:
+            Entity's message prefix
+        """
+
+        return '[{}] '.format(self.name)
+
+    def message(self, player_index, message):
+        """Sends a message from an entity to a player using SayText2.
+
+        Args:
+            player_index: Index of the player who to send the message to
+            message: Message to send
+        """
+
+        SayText2(message='{prefix}{msg}'.format(
+            prefix=self.get_message_prefix(),
+            msg=message
+        )).send(player_index)
 
 
 class Hero(Entity):

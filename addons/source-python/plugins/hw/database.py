@@ -136,7 +136,7 @@ def load_hero_data(steamid, hero):
             (steamid, hero.cid)
         )
         level, exp = cursor.fetchone() or (0, 0)
-        if level > hero.max_level:
+        if hero.max_level is not None and level > hero.max_level:
             hero.level = hero.max._level
         else:
             hero.level = level

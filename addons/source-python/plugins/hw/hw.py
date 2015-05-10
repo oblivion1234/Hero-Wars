@@ -189,7 +189,7 @@ def client_command_menu(playerinfo, command):
     if menu in menus:
         menus[menu].send(index)
     else:
-        menus['main'].send(index)
+        menus['Main'].send(index)
 
 
 # ======================================================================
