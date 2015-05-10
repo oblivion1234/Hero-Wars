@@ -185,26 +185,16 @@ def client_command_menu(playerinfo, command):
     """Opens a menu."""
 
     index = index_from_playerinfo(playerinfo)
-    if command == 'hw_menu':
-        menus['main'].send(index)
+    menu = command.get_arg_string()
+    if menu in menus:
+        menus[menu].send(index)
     else:
-        _, menu = command.split(maxsplit=1)
-        if menu in menus:
-            menus[menu].send(index)
+        menus['main'].send(index)
 
 
 # ======================================================================
 # >> GAME EVENTS
 # ======================================================================
-
-@Event
-def player_disconnect(game_event):
-    """Saves player's data upon disconnect."""
-
-    userid = game_event.get_int('userid')
-    player = Player.from_userid(userid)
-    hw.database.save_player_data(player)
-
 
 @Event
 def player_spawn(game_event):
@@ -213,14 +203,8 @@ def player_spawn(game_event):
     Also executes spawn skills and shows current exp/level progress.
     """
 
-    # Get the player
-    userid = game_event.get_int('userid')
-    player = Player.from_userid(userid)
-
-    # Save player's data
-    hw.database.save_player_data(player)
-
-    # Get player's hero
+    # Get the player and his hero
+    player = Player.from_userid(game_event.get_int('userid'))
     hero = player.hero
 
     # Show current exp and level

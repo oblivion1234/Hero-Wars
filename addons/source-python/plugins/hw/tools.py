@@ -36,19 +36,44 @@ class classproperty(object):
 # ======================================================================
 
 def find_element(iterable, attr_name, attr_value):
-    """Finds an element from an iterable by comparing an attribute."""
+    """Finds an element from an iterable by comparing an attribute.
+
+    Args:
+        iterable: Where to seek for the element
+        attr_name: Name of the comparable attribute
+        attr_value: Value to compare to
+
+    Returns:
+        The first element with matching attribute
+    """
+
     for x in iterable:
         if getattr(x, attr_name) == attr_value:
             return x
 
 
 def find_elements(iterable, attr_name, attr_value):
-    """Finds all elements from an iterable by comparing an attribute."""
+    """Finds all elements from an iterable by comparing an attribute.
+
+    Args:
+        iterable: Where to seek for the element
+        attr_name: Name of the comparable attribute
+        attr_value: Value to compare to
+
+    Returns:
+        A generator of elements with matching attribute
+    """
+
     return (x for x in iterable if getattr(x, attr_name) == attr_value)
 
 
 def get_subclasses(cls):
-    """Returns a set of class' subclasses."""
+    """Returns a set of class's subclasses.
+
+    Returns:
+        A set of class's subclasses.
+    """
+
     subclasses = set()
     for subcls in cls.__subclasses__():
         subclasses.add(subcls)

@@ -3,8 +3,9 @@
 # ======================================================================
 
 # Hero-Wars
-from hw.database import save_hero_data
+from hw.database import save_player_data
 from hw.database import load_player_data
+from hw.database import save_hero_data
 
 from hw.entities import Hero
 
@@ -16,12 +17,36 @@ from hw.configs import player_entity_class
 # Source.Python
 from players.helpers import index_from_userid
 
+from events import Event
+
 
 # ======================================================================
 # >> GLOBALS
 # ======================================================================
 
 _player_data = {}
+
+
+# ======================================================================
+# >> GAME EVENTS
+# ======================================================================
+
+@Event
+def player_disconnect(game_event):
+    """Saves player's data upon disconnect."""
+
+    userid = game_event.get_int('userid')
+    player = Player.from_userid(userid)
+    save_player_data(player)
+    del _player_data[userid]
+
+
+@Event
+def player_spawn(game_event):
+    """Saves player's data upon spawning."""
+
+    player = Player.from_userid(game_event.get_int('userid'))
+    save_player_data(player)
 
 
 # ======================================================================
