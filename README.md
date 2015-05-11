@@ -1,7 +1,7 @@
 ## About
 Hero-Wars is a plugin for CS:Source and CS:GO that merges the first-person shooting from Counter-Strike with the role-playing from games like World of Warcraft.
 Each player has a set of heroes, from which he can choose one to play with.
-Killing enemies or completing basic CS:GO objectives (plant/defuse bomb, rescue hostage) grants experience points for the hero, which will eventually allow him to level up (after reaching the required experience points). Each level grants the hero a skill point, which can then be spent to level up that hero's skills, thus making the hero stronger.
+Killing enemies or completing basic objectives (plant/defuse bomb, rescue hostage) grants experience points for the hero, which will eventually allow him to level up (after reaching the required experience points). Each level grants the hero a skill point, which can then be spent to level up that hero's skills, thus making the hero stronger.
 You will also gain gold from kills and objectives, which can be used to unlock new heroes.
 
 ## Installation
