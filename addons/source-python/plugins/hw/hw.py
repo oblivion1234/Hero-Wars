@@ -50,7 +50,7 @@ from filters.players import PlayerIter
 info = PluginInfo()
 info.name = 'Hero-Wars'
 info.author = 'Mahi'
-info.version = '0.6.0'
+info.version = '0.6.1'
 info.basename = 'hw'
 info.variable = "{0}_version".format(info.basename)
 

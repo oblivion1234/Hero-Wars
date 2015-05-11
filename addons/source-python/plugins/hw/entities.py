@@ -25,7 +25,6 @@ __all___ = (
     'Entity',
     'Hero',
     'Skill',
-    'Passive',
     'Item'
 )
 
@@ -50,7 +49,6 @@ class Entity(object):
         authors: Creators/Designers of the entity
         cost: How much does the entity cost
         max_level: Maximum level the entity can be leveled to
-        enabled: Is the entity enabled on the server
         required_level: Required level before the entity can be used
         allowed_users: List of steamids of those who can use the entity
     """
@@ -61,7 +59,6 @@ class Entity(object):
     authors = list()
     cost = int()
     max_level = None
-    enabled = bool(True)
     allowed_players = list()
 
     @classproperty
@@ -114,19 +111,15 @@ class Entity(object):
 
     @classmethod
     def get_subclasses(cls):
-        """Gets a list of the enabled subclasses.
-
-        Loops through all the subclasses of an entity class, adding the
-        ones that have 'enabled' set to True to a list and returns
-        the list of all the subclasses, sorted by the class's name.
+        """Gets a list of entity class's subclasses.
 
         Returns:
-            List of enabled entity class' subclasses
+            List of entity class's subclasses
         """
 
         return sorted(
-            (subcls for subcls in get_subclasses(cls) if subcls.enabled),
-            key=lambda subcls: subcls.name
+            (subcls for subcls in get_subclasses(cls)),
+            key=lambda subcls: subcls.cid
         )
 
     def get_message_prefix(self):
@@ -187,12 +180,8 @@ class Hero(Entity):
 
         super().__init__(level)
         self._exp = exp
-        self.skills = [
-            skill() for skill in self.skill_set if skill.enabled
-        ]
-        self.passives = [
-            passive() for passive in self.passive_set if passive.enabled
-        ]
+        self.skills = [skill() for skill in self.skill_set]
+        self.passives = [passive() for passive in self.passive_set]
         self.items = []
 
     @property
