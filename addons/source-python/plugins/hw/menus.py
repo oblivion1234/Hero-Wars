@@ -557,14 +557,11 @@ menus['Main'] = SimpleMenu(
     data=[
         Text('Hero-Wars'),
         Text(_TR['Gold']),
-        Text(' '),
         SimpleOption(1, _TR['Current Hero'], menus['Current Hero']),
         SimpleOption(2, _TR['Owned Heroes'], menus['Owned Heroes']),
         SimpleOption(3, _TR['Buy Heroes'], menus['Hero Buy Categories']),
-        Text(' '),
         SimpleOption(4, _TR['Sell Items'], menus['Sell Items']),
         SimpleOption(5, _TR['Buy Items'], menus['Item Buy Categories']),
-        Text(' '),
         SimpleOption(0, _TR['Close'])
     ],
     select_callback=_main_select_callback,
