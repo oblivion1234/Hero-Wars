@@ -256,7 +256,7 @@ class Hero(Entity):
 
             # Fire the level up event
             if self.level > old_level:
-                Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
+                Hero_Pre_Level_Up(cid=self.cid, id=str(id(self))).fire()
 
     @property
     def skill_points(self):
