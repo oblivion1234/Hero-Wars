@@ -18,7 +18,8 @@ from messages import SayText2
 # ======================================================================
 
 class classproperty(object):
-    """Decorator to create a property for a class.
+    """
+    Decorator to create a class property.
 
     http://stackoverflow.com/a/3203659/2505645
     """
@@ -34,6 +35,52 @@ class classproperty(object):
 # >> FUNCTIONS
 # ======================================================================
 
+def find_element(iterable, attr_name, attr_value):
+    """Finds an element from an iterable by comparing an attribute.
+
+    Args:
+        iterable: Where to seek for the element
+        attr_name: Name of the comparable attribute
+        attr_value: Value to compare to
+
+    Returns:
+        The first element with matching attribute
+    """
+
+    for x in iterable:
+        if getattr(x, attr_name) == attr_value:
+            return x
+
+
+def find_elements(iterable, attr_name, attr_value):
+    """Finds all elements from an iterable by comparing an attribute.
+
+    Args:
+        iterable: Where to seek for the element
+        attr_name: Name of the comparable attribute
+        attr_value: Value to compare to
+
+    Returns:
+        A generator of elements with matching attribute
+    """
+
+    return (x for x in iterable if getattr(x, attr_name) == attr_value)
+
+
+def get_subclasses(cls):
+    """Returns a set of class's subclasses.
+
+    Returns:
+        A set of class's subclasses.
+    """
+
+    subclasses = set()
+    for subcls in cls.__subclasses__():
+        subclasses.add(subcls)
+        subclasses.update(get_subclasses(subcls))
+    return subclasses
+
+
 def get_messages(lang_strings):
     """Gets a dict of SayText2 messages from a LangStrings object.
 
@@ -45,54 +92,6 @@ def get_messages(lang_strings):
     """
 
     return {key: SayText2(message=lang_strings[key]) for key in lang_strings}
-
-
-def find_element(iterable, attr_name, attr_value):
-    """Finds an element from an iterable by an attribute.
-
-    Takes an iterable and looks for the first element that has
-    an attribute with matching name and value to the provided arguments.
-
-    Args:
-        iterable: Iterable where to seek for the element
-        attr_name: Name of the attribute to compare to
-        attr_value: Desired value of the attribute
-
-    Returns:
-        First element with matching attribute
-    """
-
-    for x in iterable:
-        if getattr(x, attr_name) == attr_value:
-            return x
-
-
-def find_elements(iterable, attr_name, attr_value):
-    """Finds all elements from an iterable by an attribute.
-
-    Takes an iterable and looks for all the elements that have
-    an attribute with matching name and value to the provided arguments.
-
-    Args:
-        iterable: Iterable where to seek for the elements
-        attr_name: Name of the attribute to compare to
-        attr_value: Desired value of the attribute
-
-    Returns:
-        A generator of elements with matching attribute
-    """
-
-    return (x for x in iterable if getattr(x, attr_name) == attr_value)
-
-
-def get_subclasses(cls):
-    """Returns a set of class' subclasses."""
-
-    subclasses = set()
-    for subcls in cls.__subclasses__():
-        subclasses.add(subcls)
-        subclasses.update(get_subclasses(subcls))
-    return subclasses
 
 
 def shiftattr(obj, attr_name, shift):
@@ -236,3 +235,14 @@ def cooldownf(fn, message=None):
 
     # Return the decorator
     return method_decorator
+
+
+def split_string(string, n):
+    """Splits a string every n:th character.
+
+    Args:
+        string: String to split
+        n: Amount of characters per splitted part
+    """
+
+    return [string[i:i + n] for i in range(0, len(string), n)]

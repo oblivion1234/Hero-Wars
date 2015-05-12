@@ -13,6 +13,9 @@ from hw.configs import exp_algorithm
 
 from hw.events import Hero_Pre_Level_Up
 
+# Source.Python
+from messages import SayText2
+
 
 # ======================================================================
 # >> ALL DECLARATION
@@ -22,7 +25,6 @@ __all___ = (
     'Entity',
     'Hero',
     'Skill',
-    'Passive',
     'Item'
 )
 
@@ -44,25 +46,23 @@ class Entity(object):
     Class Attributes:
         name: Entity's name
         description: Short description of the entity
-        author: Creator/Designer of the entity
+        authors: Creators/Designers of the entity
         cost: How much does the entity cost
         max_level: Maximum level the entity can be leveled to
-        enabled: Is the entity enabled on the server
         required_level: Required level before the entity can be used
-        allowed_users: A private set of users who can use the entity
+        allowed_users: List of steamids of those who can use the entity
     """
 
     # Defaults
-    name = 'Unnamed Entity'
-    description = 'This is an entity.'
-    authors = 'Unknown'
-    cost = 0
-    max_level = 10000
-    enabled = True
-    allowed_users = tuple()
+    name = str()
+    description = str()
+    authors = list()
+    cost = int()
+    max_level = None
+    allowed_players = list()
 
     @classproperty
-    def cls_id(cls):
+    def cid(cls):
         """Gets the class' id.
 
         Returns the name of the class or instance's class.
@@ -104,27 +104,45 @@ class Entity(object):
 
         if level < 0:
             raise ValueError('Attempt to set a negative level for an entity.')
-        elif level > self.max_level:
+        elif self.max_level is not None and level > self.max_level:
             raise ValueError(
                 'Attempt to set an entity\'s level over it\'s maximum level.')
         self._level = level
 
     @classmethod
     def get_subclasses(cls):
-        """Gets a list of the enabled subclasses.
-
-        Loops through all the subclasses of an entity class, adding the
-        ones that have 'enabled' set to True to a list and returns
-        the list of all the subclasses, sorted by the class's name.
+        """Gets a list of entity class's subclasses.
 
         Returns:
-            List of enabled entity class' subclasses
+            List of entity class's subclasses
         """
 
         return sorted(
-            (subcls for subcls in get_subclasses(cls) if subcls.enabled),
-            key=lambda subcls: subcls.name
+            (subcls for subcls in get_subclasses(cls)),
+            key=lambda subcls: subcls.cid
         )
+
+    def get_message_prefix(self):
+        """Getter for entity's message prefix.
+
+        Returns:
+            Entity's message prefix
+        """
+
+        return '[{}] '.format(self.name)
+
+    def message(self, player_index, message):
+        """Sends a message from an entity to a player using SayText2.
+
+        Args:
+            player_index: Index of the player who to send the message to
+            message: Message to send
+        """
+
+        SayText2(message='{prefix}{msg}'.format(
+            prefix=self.get_message_prefix(),
+            msg=message
+        )).send(player_index)
 
 
 class Hero(Entity):
@@ -148,11 +166,8 @@ class Hero(Entity):
     """
 
     # Defaults
-    name = 'Unnamed Hero'
-    description = 'This is a hero.'
     skill_set = tuple()
     passive_set = tuple()
-    cost = 20
     category = default_hero_category
 
     def __init__(self, level=0, exp=0):
@@ -165,12 +180,8 @@ class Hero(Entity):
 
         super().__init__(level)
         self._exp = exp
-        self.skills = [
-            skill() for skill in self.skill_set if skill.enabled
-        ]
-        self.passives = [
-            passive() for passive in self.passive_set if passive.enabled
-        ]
+        self.skills = [skill() for skill in self.skill_set]
+        self.passives = [passive() for passive in self.passive_set]
         self.items = []
 
     @property
@@ -181,7 +192,7 @@ class Hero(Entity):
             Required experience points for leveling up
         """
 
-        if self.level >= self.max_level:
+        if self.max_level is not None and self.level >= self.max_level:
             return 0
         return exp_algorithm(self.level)
 
@@ -199,7 +210,7 @@ class Hero(Entity):
 
         self._exp = 0
         Entity.level.fset(self, level)  # Call to Entity's level setter
-        Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
+        Hero_Pre_Level_Up(cid=self.cid, id=str(id(self))).fire()
 
     @property
     def exp(self):
@@ -226,32 +237,26 @@ class Hero(Entity):
         if exp < 0:
             raise ValueError('Attempt to set negative exp for a hero.')
 
-        # Make sure hero is not already maxed out
-        if self.level >= self.max_level:
-            self._exp = 0
-            return
-
         # If exp differs from current exp
         if exp != self._exp:
 
             # Set the new exp and get old level
             self._exp = exp
-            old_lvl = self.level
+            old_level = self.level
 
             # Increase levels while necessary
-            while (self.exp >= self.required_exp
-                    and self.level < self.max_level):
+            while (self.exp >= self.required_exp and
+                    (self.max_level is None or self.level < self.max_level)):
                 self._exp -= self.required_exp
                 self._level += 1
 
             # Make sure the hero's level is not over the maximum level
-            if self.level >= self.max_level:
-                self._level = self.max_level
-                self._exp = 0
+            if self.max_level is not None and self.level >= self.max_level:
+                self.level = self.max_level
 
             # Fire the level up event
-            if self.level > old_lvl:
-                Hero_Pre_Level_Up(cls_id=self.cls_id, id=id(self)).fire()
+            if self.level > old_level:
+                Hero_Pre_Level_Up(cid=self.cid, id=id(self)).fire()
 
     @property
     def skill_points(self):
@@ -330,11 +335,9 @@ class Skill(Entity):
     """
 
     # Defaults
-    name = 'Unnamed Skill'
-    description = 'This is a skill.'
-    cost = 1
-    max_level = 6
-    required_level = 0
+    cost = int(1)
+    max_level = int(6)
+    required_level = int(0)
 
     def execute_method(self, method_name, **eargs):
         """Executes skill's method.

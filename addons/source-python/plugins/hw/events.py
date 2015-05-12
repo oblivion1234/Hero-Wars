@@ -8,8 +8,6 @@ from events.custom import CustomEvent
 from events.resource import ResourceFile
 from events.variable import StringVariable
 from events.variable import ShortVariable
-from events.variable import LongVariable
-from events.variable import ByteVariable
 
 
 # ======================================================================
@@ -19,8 +17,7 @@ from events.variable import ByteVariable
 __all__ = (
     'Hero_Pre_Level_Up',
     'Hero_Level_Up',
-    'Player_Ultimate',
-    'Player_Pre_Hurt'
+    'Player_Ultimate'
 )
 
 
@@ -29,13 +26,13 @@ __all__ = (
 # ======================================================================
 
 class Hero_Pre_Level_Up(CustomEvent):
-    cls_id = StringVariable("Hero's class' id")
-    id = LongVariable("Hero's unique Python id")
+    cid = StringVariable("Hero's class' id")
+    id = StringVariable("Hero's unique Python id")
 
 
 class Hero_Level_Up(CustomEvent):
-    cls_id = StringVariable("Hero's class' id")
-    id = LongVariable("Hero's unique Python id")
+    cid = StringVariable("Hero's class' id")
+    id = StringVariable("Hero's unique Python id")
     player_index = ShortVariable("Player's index")
     player_userid = ShortVariable("Player's userid")
 
@@ -45,33 +42,14 @@ class Player_Ultimate(CustomEvent):
     userid = ShortVariable("Player's userid")
 
 
-class Player_Pre_Hurt(CustomEvent):
-    armor = ByteVariable(
-        'The remaining amount of armor the victim has after the damage.')
-    attacker = ShortVariable('The userid of the attacking player.')
-    dmg_armor = ByteVariable(
-        'The amount of damage sustained by the victim\'s armor.')
-    dmg_health = ShortVariable(
-        'The amount of health the victim lost in the attack.')
-    health = ByteVariable(
-        'The remaining amount of health the victim has after the damage.')
-    hitgroup = ByteVariable('The hitgroup that was damaged in the attack.')
-    userid = ShortVariable('The userid of the victim.')
-    weapon = StringVariable('The type of weapon used in the attack.')
-
-
 # ======================================================================
-# >> CREATE RESOURCE FILES
+# >> CREATE RESOURCE FILE
 # ======================================================================
 
-for event_cls in (
-        Hero_Pre_Level_Up,
-        Hero_Level_Up,
-        Player_Ultimate,
-        Player_Pre_Hurt):
+def load():
+    """Create a resource file upon plugin loading."""
     resource_file = ResourceFile(
-        'hw/{0}'.format(event_cls.__name__.lower()),
-        event_cls
+        'hw', Hero_Pre_Level_Up, Hero_Level_Up, Player_Ultimate
     )
     resource_file.write()
     resource_file.load_events()

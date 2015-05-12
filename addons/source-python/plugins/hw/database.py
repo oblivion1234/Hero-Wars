@@ -7,147 +7,137 @@ from hw.entities import Hero
 
 from hw.tools import find_element
 
+from hw.configs import database_path
+
 # Python
 import sqlite3
+from contextlib import closing
 
 
 # ======================================================================
-# >> ALL DECLARATION
+# >> GLOBALS
 # ======================================================================
 
-__all__ = (
-    'setup_database',
-    'load_player_data',
-    'save_player_data',
-    'save_hero_data',
-    'load_hero_data'
-)
+connection = None
 
 
 # ======================================================================
 # >> FUNCTIONS
 # ======================================================================
 
-def setup_database(database_file):
-    """Creates the HW tables into the database if they don't exist.
+def setup():
+    """Creates the Hero-Wwars tables into the database."""
 
-    Args:
-        database_file: Path to the database file
-    """
-
-    with sqlite3.connect(database_file) as connection:
-        cursor = connection.cursor()
+    global connection
+    connection = sqlite3.connect(database_path)
+    with closing(connection.cursor()) as cursor:
         cursor.execute("""CREATE TABLE IF NOT EXISTS players (
             steamid TEXT PRIMARY KEY,
             gold INTEGER,
-            hero_cls_id TEXT
+            hero_cid TEXT
         )""")
         cursor.execute("""CREATE TABLE IF NOT EXISTS heroes (
             steamid TEXT,
-            cls_id TEXT,
+            cid TEXT,
             level INTEGER,
             exp INTEGER,
-            PRIMARY KEY (steamid, cls_id)
+            PRIMARY KEY (steamid, cid)
         )""")
         cursor.execute("""CREATE TABLE IF NOT EXISTS skills (
             steamid TEXT,
-            hero_cls_id TEXT,
-            cls_id TEXT,
+            hero_cid TEXT,
+            cid TEXT,
             level INTEGER,
-            PRIMARY KEY (steamid, hero_cls_id, cls_id)
+            PRIMARY KEY (steamid, hero_cid, cid)
         )""")
 
 
-def save_player_data(database_file, player):
+def save_player_data(player):
     """Saves player's data into the database.
 
     Args:
-        database_file: Path to the database file
-        player: Player whose data to save
+        player: player whose data to save
     """
 
-    with sqlite3.connect(database_file) as connection:
-        cursor = connection.cursor()
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "INSERT OR REPLACE INTO players VALUES (?, ?, ?)",
-            (player.steamid, player.gold, player.hero.cls_id)
+            (player.steamid, player.gold, player.hero.cid)
         )
-    save_hero_data(database_file, player.steamid, player.hero)
+    save_hero_data(player.steamid, player.hero)  # Calls database.commit()
 
 
-def save_hero_data(database_file, steamid, hero):
+def save_hero_data(steamid, hero):
     """Saves hero's data into the database.
 
     Args:
-        database_file: Path to the database file
         steamid: Steamid of the hero's owner
         hero: Hero whose data to save
     """
 
-    with sqlite3.connect(database_file) as connection:
-        cursor = connection.cursor()
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
             "INSERT OR REPLACE INTO heroes VALUES (?, ?, ?, ?)",
-            (steamid, hero.cls_id, hero.level, hero.exp)
+            (steamid, hero.cid, hero.level, hero.exp)
         )
         for skill in hero.skills:
             cursor.execute(
                 "INSERT OR REPLACE INTO skills VALUES (?, ?, ?, ?)",
-                (steamid, hero.cls_id, skill.cls_id, skill.level)
+                (steamid, hero.cid, skill.cid, skill.level)
             )
+    connection.commit()
 
 
-def load_player_data(database_file, player):
+def load_player_data(player):
     """Loads player's data from the database.
 
     Args:
-        database_file: Path to the database file
-        player: Player whose data to load
+        player: player whose data to load
     """
 
-    heroes = Hero.get_subclasses()
-    with sqlite3.connect(database_file) as connection:
-        cursor = connection.cursor()
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
-            "SELECT gold, hero_cls_id FROM players WHERE steamid=?",
+            "SELECT gold, hero_cid FROM players WHERE steamid=?",
             (player.steamid, )
         )
-        gold, current_hero_cls_id = cursor.fetchone() or (0, None)
+        gold, current_hero_cid = cursor.fetchone() or (0, None)
         player.gold = gold
 
         # Load player's heroes
         cursor.execute(
-            "SELECT cls_id, level, exp FROM heroes WHERE steamid=?",
+            "SELECT cid, level, exp FROM heroes WHERE steamid=?",
             (player.steamid, )
         )
-        for cls_id, level, exp in cursor.fetchall():
-            hero_cls = find_element(heroes, 'cls_id', cls_id)
-            if hero_cls:
-                hero = hero_cls(level, exp)
-                load_hero_data(database_file, player.steamid, hero)
-                player.heroes.append(hero)
-                if cls_id == current_hero_cls_id:
-                    player.hero = hero
+        heroes = cursor.fetchall()
+
+    # Load heroes data
+    hero_classes = Hero.get_subclasses()
+    for cid, level, exp in heroes:
+        hero_cls = find_element(hero_classes, 'cid', cid)
+        if hero_cls:
+            hero = hero_cls(level, exp)
+            load_hero_data(player.steamid, hero)
+            player.heroes.append(hero)
+            if cid == current_hero_cid:
+                player.hero = hero
 
 
-def load_hero_data(database_file, steamid, hero):
+def load_hero_data(steamid, hero):
     """Loads hero's data from the database.
 
     Args:
-        database_file: Path to the database file
         steamid: Steamid of the hero's owner
         hero: Hero whose data to load
     """
 
-    with sqlite3.connect(database_file) as connection:
-        cursor = connection.cursor()
+    with closing(connection.cursor()) as cursor:
         cursor.execute(
-            "SELECT level, exp FROM heroes WHERE steamid=? AND cls_id=?",
-            (steamid, hero.cls_id)
+            "SELECT level, exp FROM heroes WHERE steamid=? AND cid=?",
+            (steamid, hero.cid)
         )
         level, exp = cursor.fetchone() or (0, 0)
-        if level > hero.max_level:
-            hero.level = hero.max._level
+        if hero.max_level is not None and level > hero.max_level:
+            hero.level = hero.max_level
         else:
             hero.level = level
         hero.exp = exp
@@ -156,8 +146,8 @@ def load_hero_data(database_file, steamid, hero):
         for skill in hero.skills:
             cursor.execute(
                 "SELECT level FROM skills "
-                "WHERE steamid=? AND hero_cls_id=? AND cls_id=?",
-                (steamid, hero.cls_id, skill.cls_id)
+                "WHERE steamid=? AND hero_cid=? AND cid=?",
+                (steamid, hero.cid, skill.cid)
             )
             data = cursor.fetchone()
             if data:
