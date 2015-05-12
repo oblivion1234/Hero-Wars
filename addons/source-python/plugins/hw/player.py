@@ -17,7 +17,15 @@ from hw.configs import player_entity_class
 # Source.Python
 from players.helpers import index_from_userid
 
+from memory import make_object
+from memory.hooks import HookType
+
+from entities import TakeDamageInfo
+from entities.helpers import index_from_pointer
+
 from events import Event
+
+from weapons.entity import WeaponEntity
 
 
 # ======================================================================
@@ -25,7 +33,7 @@ from events import Event
 # ======================================================================
 
 _player_data = {}
-
+_is_hooked = False
 
 # ======================================================================
 # >> GAME EVENTS
@@ -48,6 +56,45 @@ def player_spawn(game_event):
     player = Player.from_userid(game_event.get_int('userid'))
     save_player_data(player)
 
+# ======================================================================
+# >> HOOKS
+# ======================================================================
+
+def weapon_bump(args):
+    """
+    Hooked to a function that is fired any time a weapon is
+    requested to be picked up in game.
+    """
+
+    player_index = index_from_pointer(args[0])
+    weapon_index = index_from_pointer(args[1])
+    weapon = WeaponEntity(weapon_index)
+    player = Player(player_index)
+    eargs = {'weapon': weapon}
+    if weapon.classname in player.restrictions:
+        player.hero.execute_skills('weapon_pickup_failed', player=player, **eargs)
+        return False
+    else:
+        player.hero.execute_skills('weapon_pickup', player=player, **eargs)
+
+def take_damage(args):
+    """
+    Hooked to a function that is fired any time an
+    entity takes damage.
+    """
+
+    player_index = index_from_pointer(args[0])
+    info = make_object(TakeDamageInfo, args[1])
+    defender = Player(player_index)
+    attacker = Player(info.attacker)
+    eargs = {
+        'attacker': attacker,
+        'defender': defender,
+        'info': info
+    }
+    if not player_index == info.attacker:
+        defender.hero.execute_skills('player_pre_defend', **eargs)
+        attacker.hero.execute_skills('player_pre_attack', **eargs)
 
 # ======================================================================
 # >> CLASSES
@@ -79,11 +126,19 @@ class Player(player_entity_class):
             index: Index of the player
         """
 
+        if _is_hooked is False:
+            self.bump_weapon.add_hook(HookType.PRE, weapon_bump)
+            self.take_damage.add_hook(HookType.PRE, take_damage)
+
+            global _is_hooked
+            _is_hooked = True
+
         if self.userid not in _player_data:
             _player_data[self.userid] = {
                 'gold': 0,
                 'hero': None,
-                'heroes': []
+                'heroes': [],
+                'weapons': set()
             }
 
             # Load player's data
@@ -175,3 +230,7 @@ class Player(player_entity_class):
         """
 
         return _player_data[self.userid]['heroes']
+
+    @property
+    def restrictions(self):
+        return _player_data[self.userid]['weapons']
