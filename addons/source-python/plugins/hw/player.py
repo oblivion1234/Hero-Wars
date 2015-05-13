@@ -221,6 +221,9 @@ class Player(player_entity_class):
         # Change to the new hero
         _player_data[self.userid]['hero'] = hero
 
+        # Reset current restrictions
+        _player_data[self.userid]['weapons'].clear()
+
     @property
     def heroes(self):
         """Getter for plaeyr's heroes.
