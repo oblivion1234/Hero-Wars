@@ -721,7 +721,7 @@ def _hero_owned_info_build_callback(menu, player_index):
     menu.title = '{name} {level}{max_level}'.format(
         name=hero.name,
         level=hero.level,
-        max_level='/' + hero.max_level if hero.max_level is not None else ''
+        max_level='/' + str(hero.max_level) if hero.max_level is not None else ''
     )
 
     for passive in hero.passive_set:
@@ -738,7 +738,7 @@ def _hero_owned_info_build_callback(menu, player_index):
                 name=skill.name,
                 level=skill.level,
                 max_level=(
-                    '/' + skill.max_level
+                    '/' + str(skill.max_level)
                     if skill.max_level is not None else ''
                     ),
                 cost=(
@@ -786,7 +786,7 @@ def _playerinfo_build_callback(menu, player_index):
         menu.append(Text('{name} {cur}{max}'.format(
             name=skill.name,
             cur=skill.level,
-            max='/' + skill.max_level if skill.max_level is not None else ''
+            max='/' + str(skill.max_level) if skill.max_level is not None else ''
         )))
 
 
