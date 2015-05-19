@@ -56,6 +56,7 @@ def player_spawn(game_event):
     player = Player.from_userid(game_event.get_int('userid'))
     save_player_data(player)
 
+
 # ======================================================================
 # >> HOOKS
 # ======================================================================
@@ -70,14 +71,15 @@ def weapon_bump(args):
     weapon_index = index_from_pointer(args[1])
     weapon = WeaponEntity(weapon_index)
     player = Player(player_index)
-    eargs = {'weapon': weapon}
+    eargs = {'weapon': weapon, 'player': player}
     if weapon.classname in player.restrictions:
-        player.hero.execute_skills('weapon_pickup_failed', player=player, **eargs)
+        player.hero.execute_skills('weapon_pickup_fail', **eargs)
         return False
     else:
-        player.hero.execute_skills('weapon_pickup', player=player, **eargs)
+        player.hero.execute_skills('weapon_pickup', **eargs)
 
-def take_damage(args):
+
+def on_take_damage(args):
     """
     Hooked to a function that is fired any time an
     entity takes damage.
@@ -95,6 +97,7 @@ def take_damage(args):
     if not player_index == info.attacker:
         defender.hero.execute_skills('player_pre_defend', **eargs)
         attacker.hero.execute_skills('player_pre_attack', **eargs)
+
 
 # ======================================================================
 # >> CLASSES
@@ -128,7 +131,7 @@ class Player(player_entity_class):
 
         if _is_hooked is False:
             self.bump_weapon.add_hook(HookType.PRE, weapon_bump)
-            self.take_damage.add_hook(HookType.PRE, take_damage)
+            self.on_take_damage.add_hook(HookType.PRE, on_take_damage)
 
             global _is_hooked
             _is_hooked = True
