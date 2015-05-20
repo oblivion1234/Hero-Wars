@@ -129,13 +129,16 @@ class Player(player_entity_class):
             index: Index of the player
         """
 
+        super().__init__(index)
+
+        # Hooks :3
         if _is_hooked is False:
             self.bump_weapon.add_hook(HookType.PRE, weapon_bump)
             self.on_take_damage.add_hook(HookType.PRE, on_take_damage)
-
             global _is_hooked
             _is_hooked = True
 
+        # Create player's data dict
         if self.userid not in _player_data:
             _player_data[self.userid] = {
                 'gold': 0,
