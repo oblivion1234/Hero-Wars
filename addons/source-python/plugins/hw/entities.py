@@ -142,7 +142,7 @@ class Entity(object):
         SayText2(message='{prefix}{msg}'.format(
             prefix=self.get_message_prefix(),
             msg=message
-        )).send(player_index)
+        )).send((player_index,))
 
 
 class Hero(Entity):
