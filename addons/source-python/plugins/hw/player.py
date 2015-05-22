@@ -27,6 +27,9 @@ from events import Event
 
 from weapons.entity import WeaponEntity
 
+from engines.server import engine_server
+
+
 
 # ======================================================================
 # >> GLOBALS
@@ -61,7 +64,7 @@ def player_spawn(game_event):
 # >> HOOKS
 # ======================================================================
 
-def weapon_bump(args):
+def _weapon_bump(args):
     """
     Hooked to a function that is fired any time a weapon is
     requested to be picked up in game.
@@ -79,7 +82,7 @@ def weapon_bump(args):
         player.hero.execute_skills('weapon_pickup', **eargs)
 
 
-def on_take_damage(args):
+def _on_take_damage(args):
     """
     Hooked to a function that is fired any time an
     entity takes damage.
@@ -132,10 +135,10 @@ class Player(player_entity_class):
         super().__init__(index)
 
         # Hooks :3
+        global _is_hooked
         if _is_hooked is False:
-            self.bump_weapon.add_hook(HookType.PRE, weapon_bump)
-            self.on_take_damage.add_hook(HookType.PRE, on_take_damage)
-            global _is_hooked
+            self.bump_weapon.add_hook(HookType.PRE, _weapon_bump)
+            self.on_take_damage.add_hook(HookType.PRE, _on_take_damage)
             _is_hooked = True
 
         # Create player's data dict
@@ -213,6 +216,10 @@ class Player(player_entity_class):
                 cid=hero.cid, steamid=self.steamid
             ))
 
+        # Make sure the hero is different than player's current hero
+        if hero == self.hero:
+            return
+
         # If player has a current hero
         if self.hero:
 
@@ -229,6 +236,9 @@ class Player(player_entity_class):
 
         # Reset current restrictions
         _player_data[self.userid]['weapons'].clear()
+        
+        # Slay the player
+        engine_server.client_command(self.edict, 'kill', True)
 
     @property
     def heroes(self):
