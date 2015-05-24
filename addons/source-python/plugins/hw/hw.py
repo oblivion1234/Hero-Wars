@@ -234,6 +234,7 @@ def player_death(game_event):
     # Create the event arguments dict
     eargs = {
         'defender': defender,
+        'attacker': None
         'headshot': game_event.get_bool('headshot'),
         'weapon': game_event.get_string('weapon')
     }
@@ -271,23 +272,23 @@ def player_hurt(game_event):
     # Get the defender
     defender = Player.from_userid(game_event.get_int('userid'))
 
-    # Create event arguments dict
-    eargs = {
-        'defender': defender,
-        'damage': game_event.get_int('dmg_health'),
-        'damage_armor': game_event.get_int('dmg_armor'),
-        'weapon': game_event.get_string('weapon')
-    }
-
-    # Get the attacker and execute his skills
+    # Get the attacker
     attacker_id = game_event.get_int('attacker')
-    if attacker_id:
+    if attacker_id and attacker_id != defender.userid:
         attacker = Player.from_userid(attacker_id)
-        eargs['attacker'] = attacker
-        attacker.hero.execute_skills('player_attack', **eargs)
 
-    # Execute defend skills
-    defender.hero.execute_skills('player_defend', **eargs)
+        # Create event arguments dict
+        eargs = {
+            'defender': defender,
+            'attacker': attacker,
+            'damage': game_event.get_int('dmg_health'),
+            'damage_armor': game_event.get_int('dmg_armor'),
+            'weapon': game_event.get_string('weapon')
+        }
+        
+        # Execute attacker's and defender's skills
+        attacker.hero.execute_skills('player_attack', **eargs)
+        defender.hero.execute_skills('player_defend', **eargs)
 
 
 @Event
