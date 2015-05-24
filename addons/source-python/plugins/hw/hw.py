@@ -324,7 +324,7 @@ def player_say(game_event):
     elif text2 in ('hw', 'hw'):
         menus['Main'].send(player.index)
 
-    elif text2 == 'admin':
+    elif text2 == 'admin' and player.steamid in cfg.admins:
         menus['Admin'].send(player.index)
 
     # Finally, execute hero's player_say skills
