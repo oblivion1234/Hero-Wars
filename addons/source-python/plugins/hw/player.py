@@ -91,7 +91,7 @@ def _on_take_damage(args):
     player_index = index_from_pointer(args[0])
     info = make_object(TakeDamageInfo, args[1])
     defender = Player(player_index)
-    attacker = Player(info.attacker)
+    attacker = None if not info.attacker else Player(info.attacker)
     eargs = {
         'attacker': attacker,
         'defender': defender,
@@ -221,7 +221,7 @@ class Player(player_entity_class):
             return
 
         # If player has a current hero
-        if self.hero is not None:
+        if self.hero:
 
             # Save current hero's data
             save_hero_data(self.steamid, self.hero)
@@ -230,7 +230,7 @@ class Player(player_entity_class):
             for item in self.hero.items:
                 if not item.permanent:
                     self.hero.items.remove(item)
-        
+
             # Slay the player
             engine_server.client_command(self.edict, 'kill', True)
 
