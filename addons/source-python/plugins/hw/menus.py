@@ -448,8 +448,8 @@ def _buy_heroes_select_callback(menu, player_index, choice):
 
     next_menu = HeroMenu(
         choice.value,
-        select_callback=_hero_owned_info_select_callback,
-        build_callback=_hero_owned_info_build_callback,
+        select_callback=_hero_buy_info_select_callback,
+        build_callback=_hero_buy_info_build_callback,
         constants={7: PagedOption(_TR['Buy'], 7)},
     )
     next_menu.previous_menu = menu
