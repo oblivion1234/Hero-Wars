@@ -685,15 +685,16 @@ def _hero_buy_info_build_callback(menu, player_index):
             '{name}{max_level}{cost}{req}\n{description}'.format(
                 name=skill.name,
                 max_level=(
-                    ' ' + _TR['Max'].get_string(max=skill.max_level)
+                    ' | ' + _TR['Max'].get_string(max=skill.max_level)
                     if skill.max_level is not None else ''
                     ),
                 cost=(
-                    ' ' + _TR['Cost'].get_string(cost=skill.cost)
+                    ' | ' + _TR['Cost'].get_string(cost=skill.cost)
                     if skill.cost != 1 else ''
                     ),
                 req=(
-                    ' ' + _TR['Required'].get_string(req=skill.required_level)
+                    ' | ' + _TR['Required'].get_string(
+                        req=skill.required_level)
                     if skill.required_level != 0 else ''
                     ),
                 description='\n'.join(
@@ -742,13 +743,12 @@ def _hero_owned_info_build_callback(menu, player_index):
                     if skill.max_level is not None else ''
                     ),
                 cost=(
-                    ' ' + _TR['Cost'].get_string(cost=skill.cost)
+                    ' | ' + _TR['Cost'].get_string(cost=skill.cost)
                     if skill.cost != 1 else ''
                     ),
                 req=(
-                    ' ' + _TR['Required'].get_string(
-                        req=skill.required_level
-                    )
+                    ' | ' + _TR['Required'].get_string(
+                        req=skill.required_level)
                     if skill.required_level != 0 else ''
                     ),
                 description='\n'.join(
