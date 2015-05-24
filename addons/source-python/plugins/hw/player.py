@@ -134,13 +134,6 @@ class Player(player_entity_class):
 
         super().__init__(index)
 
-        # Hooks :3
-        global _is_hooked
-        if _is_hooked is False:
-            self.bump_weapon.add_hook(HookType.PRE, _weapon_bump)
-            self.on_take_damage.add_hook(HookType.PRE, _on_take_damage)
-            _is_hooked = True
-
         # Create player's data dict
         if self.userid not in _player_data:
             _player_data[self.userid] = {
@@ -163,6 +156,13 @@ class Player(player_entity_class):
             # Make sure the player has a hero
             if not self.hero:
                 self.hero = self.heroes[0]
+
+        # Hooks :3
+        global _is_hooked
+        if _is_hooked is False:
+            self.bump_weapon.add_hook(HookType.PRE, _weapon_bump)
+            self.on_take_damage.add_hook(HookType.PRE, _on_take_damage)
+            _is_hooked = True
 
     @property
     def gold(self):
@@ -221,7 +221,7 @@ class Player(player_entity_class):
             return
 
         # If player has a current hero
-        if self.hero:
+        if self.hero is not None:
 
             # Save current hero's data
             save_hero_data(self.steamid, self.hero)
@@ -230,15 +230,15 @@ class Player(player_entity_class):
             for item in self.hero.items:
                 if not item.permanent:
                     self.hero.items.remove(item)
+        
+            # Slay the player
+            engine_server.client_command(self.edict, 'kill', True)
 
         # Change to the new hero
         _player_data[self.userid]['hero'] = hero
 
         # Reset current restrictions
         _player_data[self.userid]['weapons'].clear()
-        
-        # Slay the player
-        engine_server.client_command(self.edict, 'kill', True)
 
     @property
     def heroes(self):
