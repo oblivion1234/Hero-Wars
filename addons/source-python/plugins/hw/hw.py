@@ -234,7 +234,7 @@ def player_death(game_event):
     # Create the event arguments dict
     eargs = {
         'defender': defender,
-        'attacker': None
+        'attacker': None,
         'headshot': game_event.get_bool('headshot'),
         'weapon': game_event.get_string('weapon')
     }
