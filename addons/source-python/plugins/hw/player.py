@@ -30,13 +30,13 @@ from weapons.entity import WeaponEntity
 from engines.server import engine_server
 
 
-
 # ======================================================================
 # >> GLOBALS
 # ======================================================================
 
 _player_data = {}
 _is_hooked = False
+
 
 # ======================================================================
 # >> GAME EVENTS
@@ -140,7 +140,7 @@ class Player(player_entity_class):
                 'gold': 0,
                 'hero': None,
                 'heroes': [],
-                'weapons': set()
+                'restrictions': set()
             }
 
             # Load player's data
@@ -238,11 +238,11 @@ class Player(player_entity_class):
         _player_data[self.userid]['hero'] = hero
 
         # Reset current restrictions
-        _player_data[self.userid]['weapons'].clear()
+        self.restrictions.clear()
 
     @property
     def heroes(self):
-        """Getter for plaeyr's heroes.
+        """Getter for player's heroes.
 
         Returns:
             A list of player's heroes.
@@ -252,4 +252,17 @@ class Player(player_entity_class):
 
     @property
     def restrictions(self):
-        return _player_data[self.userid]['weapons']
+        """Getter for player's restrictions.
+
+        Returns:
+            A set of player's restricted weapons
+        """
+
+        return _player_data[self.userid]['restrictions']
+
+    @restrictions.setter
+    def restrictions(self, restrictions):
+        """Setter for player's restrictions."""
+
+        self.restrictions.clear()
+        self.restrictions.update(set(restrictions))
