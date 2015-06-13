@@ -153,9 +153,6 @@ def chancef(fn):
                 # Call the method
                 return method(self, **eargs)
 
-            # Else exit with code 2
-            return 2
-
         # Return the wrapper
         return method_wrapper
 
@@ -223,9 +220,6 @@ def cooldownf(fn, message=None):
 
                 # And send it to the player
                 SayText2(message=formatted_message).send(eargs['player'].index)
-
-                # And exit with code 3
-                return 3
 
         # Create the cooldown object for the wrapper
         method_wrapper.cooldown = TickRepeat(lambda: None)
