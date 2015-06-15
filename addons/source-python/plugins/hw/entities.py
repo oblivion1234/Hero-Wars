@@ -183,6 +183,7 @@ class Hero(Entity):
         self.skills = [skill() for skill in self.skill_set]
         self.passives = [passive() for passive in self.passive_set]
         self.items = []
+        self.effects = []
 
     @property
     def required_exp(self):
@@ -287,6 +288,8 @@ class Hero(Entity):
                 skill.execute_method(method_name, **eargs)
         for item in self.items:
             item.execute_method(method_name, **eargs)
+        for effect in self.effects:
+            effect.execute_method(method_name, **eargs)
 
     @classmethod
     def skill(cls, skill_class):
@@ -355,14 +358,28 @@ class Skill(Entity):
             method(self, **eargs)
 
 
+class Effect(Skill):
+    """Effects are temporary skills that are applied by other skills.
+
+    Effects usually last for a limited time only, and they can be
+    positive (usually applied on allies or self) or negative (usually
+    applied on enemies).
+    """
+
+    name = 'Unnamed Effect'
+    description = 'This is an effect.'
+    cost = 0
+
+
 class Item(Skill):
-    """Items are kind of temporary skills that can be bought on heroes.
+    """Items are temporary skills that can be bought on heroes.
 
     Each hero can equip 6 items at once, they can be bought and sold
     and some can be upgraded.
 
     Class Attributes:
         permanent: Does the item stay when the hero dies
+        limit: How many items of the same type can be held at once
     """
 
     # Defaults
